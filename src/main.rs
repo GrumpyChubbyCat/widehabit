@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
-use widehobby::{config::WideConfig, errors::WideAppError, run};
+use widehabit::{config::WideConfig, errors::WideAppError, run};
 
 #[tokio::main]
 async fn main() -> Result<(), WideAppError> {

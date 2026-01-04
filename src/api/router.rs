@@ -8,7 +8,7 @@ use crate::db::PgPool;
 
 pub fn api_router(db: PgPool) -> Router {
     let trace_layer = TraceLayer::new_for_http()
-        .on_request(|request: &Request<Body>, span: &Span| {
+        .on_request(|request: &Request<Body>, _span: &Span| {
             tracing::info!(
                 "Started processing request method={} path={} version={:?}",
                 request.method(),
@@ -36,5 +36,5 @@ pub fn api_router(db: PgPool) -> Router {
 }
 
 async fn root_get() -> &'static str {
-    "Hi from widehobby"
+    "Hi from widehabit"
 }
