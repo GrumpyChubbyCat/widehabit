@@ -25,7 +25,7 @@ pub async fn run(config: WideConfig) -> Result<(), WideAppError> {
     let address = format!("{host}:{port}");
     let listener = TcpListener::bind(address).await?;
 
-    tracing::info!("Started widehobby server on {host}:{port}");
+    tracing::info!("Started widehabit server on {host}:{port}");
 
     axum::serve(listener, router)
         .with_graceful_shutdown(shutdown())

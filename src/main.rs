@@ -12,7 +12,7 @@ async fn main() -> Result<(), WideAppError> {
 
     // Trying to deserialize our config
     let config = WideConfig::new()?;
-    
+
     // Setup log level for tracing
     let log_level = Level::from_str(&config.log_level)?;
 
