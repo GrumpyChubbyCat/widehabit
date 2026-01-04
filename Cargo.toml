@@ -1,0 +1,32 @@
+[package]
+name = "widehobby"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Core dependencies: runtime, HTTP framework and database client.
+axum = "0.8.8"
+diesel = { version = "2.3.5", features = ["uuid"] }
+diesel-async = { version = "0.7.4", features = ["postgres", "bb8"] }
+tokio = { version = "1.49.0", features = ["full"] }
+
+# Tracing and logging
+tower-http = { version = "0.6.8", features = ["trace"] }
+tracing = "0.1.44"
+tracing-subscriber = "0.3.22"
+
+# Serialization
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.148"
+
+# Utility crates
+config = { version = "0.15.19", default-features = false }
+dotenv = "0.15.0"
+argon2 = "0.5.3"
+rand = "0.9.2"
+thiserror = "2.0.17"
+uuid = { version = "1.19.0", features = ["serde", "v4", "fast-rng"] }
+
+[profile.release]
+opt-level = 3
+lto = true
