@@ -36,6 +36,30 @@ services:
     networks:
       - wide
 
+  widehabit-migrations:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    networks:
+      - wide
+
+  widehabit-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+    depends_on:
+      widehabit-migrations:
+        condition: service_completed_successfully
+    env_file: .env
+    ports:
+      - "9091:9091"
+    networks:
+      - wide
+
 volumes:
   pgdata:
     driver: local
