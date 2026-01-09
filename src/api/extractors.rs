@@ -17,6 +17,12 @@ use std::marker::PhantomData;
 
 pub trait AccessLevel {
     fn required_role() -> UserRole;
+
+    fn is_satisfied(user_role: i32) -> bool {
+        let required = Self::required_role() as i32;
+        // ADMIN=1, USER=2, BLOCKED=3:
+        user_role <= required && user_role != UserRole::BLOCKED as i32
+    }
 }
 
 pub struct AdminOnly;
@@ -72,8 +78,7 @@ where
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let access_claims = AccessClaims::from_request_parts(parts, state).await?;
 
-        if access_claims.role != UserRole::BLOCKED as i32
-            && access_claims.role <= L::required_role() as i32
+        if L::is_satisfied(access_claims.role)
         {
             Ok(RoleClaims(access_claims, std::marker::PhantomData))
         } else {
