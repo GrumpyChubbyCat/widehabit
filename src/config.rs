@@ -4,6 +4,16 @@ use config::{Config, ConfigError, Environment};
 use serde::Deserialize;
 
 #[derive(Clone, Debug, Deserialize)]
+pub struct AuthConfig {
+    #[serde(default = "default_jwt_secret")]
+    pub jwt_secret: String,
+    #[serde(default = "default_access_lt")] 
+    pub access_lt: i64, // Access token lifetime
+    #[serde(default = "default_refresh_lt")]
+    pub refresh_lt: i64, // Refresh token lifetime
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct WideConfig {
     #[serde(default = "default_listen_address")]
     pub listen_address: Ipv4Addr,
@@ -15,6 +25,8 @@ pub struct WideConfig {
     pub database_url: String,
     #[serde(default = "default_db_pool")]
     pub database_pool: u32,
+    #[serde(flatten)]
+    pub auth_config: AuthConfig,
 }
 
 impl WideConfig {
@@ -45,4 +57,16 @@ fn default_db_pool() -> u32 {
 
 fn default_log_level() -> String {
     String::from("DEBUG")
+}
+
+fn default_jwt_secret() -> String {
+    String::from("95fe6a63-dda8-4613-a0c2-8f99dd7c628f-00321011-0b63-405a-afff-c448f1de71dc")
+}
+
+fn default_access_lt() -> i64 {
+    15
+}
+
+fn default_refresh_lt() -> i64 {
+    6
 }

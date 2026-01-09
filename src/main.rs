@@ -2,10 +2,10 @@ use std::str::FromStr;
 
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
-use widehabit::{config::WideConfig, errors::WideAppError, run};
+use widehabit::{config::WideConfig, errors::StartError, run};
 
 #[tokio::main]
-async fn main() -> Result<(), WideAppError> {
+async fn main() -> Result<(), StartError> {
     // This returns an error if the `.env` file doesn't exist, but that's not what we want
     // since we're not going to use a `.env` file if we deploy this application.
     dotenv::dotenv().ok();

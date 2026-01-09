@@ -2,14 +2,16 @@ use tokio::{net::TcpListener, signal};
 
 use diesel_async::pooled_connection::{AsyncDieselConnectionManager, bb8};
 
-use crate::{api::router::api_router, config::WideConfig, errors::WideAppError};
+use crate::{api::router::api_router, config::WideConfig, errors::StartError};
 
 pub mod config;
 pub mod db;
+pub mod service;
+pub mod model;
 pub mod errors;
 pub mod api;
 
-pub async fn run(config: WideConfig) -> Result<(), WideAppError> {
+pub async fn run(config: WideConfig) -> Result<(), StartError> {
     let db_config =
         AsyncDieselConnectionManager::<diesel_async::AsyncPgConnection>::new(config.database_url);
     let db_pool = bb8::Pool::builder()
@@ -17,7 +19,7 @@ pub async fn run(config: WideConfig) -> Result<(), WideAppError> {
         .build(db_config)
         .await?;
 
-    let router = api_router(db_pool);
+    let router = api_router(db_pool, config.auth_config);
 
     let host = config.listen_address;
     let port = config.listen_port;
