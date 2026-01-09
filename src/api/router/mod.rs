@@ -39,24 +39,23 @@ impl FromRef<AppState> for Arc<UserService> {
 
 pub fn api_router(db_pool: DbPool, auth_config: AuthConfig) -> Router {
     let trace_layer = TraceLayer::new_for_http()
-        .on_request(|request: &Request<Body>, _span: &Span| {
-            tracing::info!(
-                "Started processing request method={} path={} version={:?}",
-                request.method(),
-                request.uri().path(),
-                request.version()
-            )
-        })
+        .on_request(|_request: &Request<Body>, _span: &Span| tracing::info!("request_started",))
         .on_response(|response: &Response, latency: Duration, _span: &Span| {
-            tracing::info!(
-                "Response status={} in {:?} secs",
-                response.status(),
-                latency.as_secs_f32()
-            )
+            let status = response.status();
+            let latency_ms = latency.as_millis();
+            let status_u16 = status.as_u16();
+
+            if status.is_server_error() {
+                tracing::error!(status_u16, latency_ms, "server_error");
+            } else if status.is_client_error() {
+                tracing::warn!(status_u16, latency_ms, "client_error");
+            } else {
+                tracing::info!(status_u16, latency_ms, "request_success")
+            }
         })
         .on_failure(
             |error: ServerErrorsFailureClass, _latency: Duration, _span: &Span| {
-                tracing::error!("Error {}", error)
+                tracing::error!("app_error {}", error)
             },
         );
 
