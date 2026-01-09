@@ -8,11 +8,11 @@ use uuid::Uuid;
 
 use crate::{
     config::AuthConfig,
-    db::repo::UserRepository,
+    db::{entity::NewUser, repo::UserRepository},
     errors::InternalError,
     model::{
         auth::{AccessClaims, RefreshClaims},
-        user::{UserAuthReq, UserRole, UserRoleData},
+        user::{UserAuthReq, UserRegistrationReq, UserRole, UserRoleData},
     },
 };
 
@@ -31,6 +31,18 @@ impl UserService {
             access_lt: auth_config.access_lt,
             refresh_lt: auth_config.refresh_lt,
         }
+    }
+
+    pub async fn register_user(&self, user_data: UserRegistrationReq) -> Result<(), InternalError> {
+        let password_hash = self.hash_token_blocking(user_data.password).await?;
+        let new_user = NewUser {
+            username: &user_data.username,
+            email: &user_data.email,
+            password_hash: &password_hash,
+            role_id: UserRole::USER as i32
+        };
+
+        self.user_repo.create_new_user(new_user).await
     }
 
     pub async fn authenticate(

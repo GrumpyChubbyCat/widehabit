@@ -1,16 +1,12 @@
 use std::sync::Arc;
 
-use axum::{
-    Json, Router,
-    extract::State,
-    http::StatusCode,
-    routing::post,
-};
+use axum::{Json, Router, extract::State, http::StatusCode, routing::post};
 use axum_extra::extract::{
     CookieJar,
     cookie::{Cookie, SameSite},
 };
 use time::Duration as TimeDuration;
+use validator::Validate;
 
 use crate::{
     api::{
@@ -20,7 +16,7 @@ use crate::{
     errors::InternalError,
     model::{
         auth::{AuthToken, RefreshClaims},
-        user::{UserAuthReq, UserRole},
+        user::{UserAuthReq, UserRegistrationReq, UserRole},
     },
     service::user::UserService,
 };
@@ -29,9 +25,23 @@ const COOKIE_LIFETIME: i64 = 30;
 
 pub fn auth_router() -> Router<AppState> {
     Router::new()
+        .route("/register", post(register_user))
         .route("/login", post(auth_user))
         .route("/refresh", post(refresh_access_token))
         .route("/logout", post(logout))
+}
+
+pub async fn register_user(
+    State(user_service): State<Arc<UserService>>,
+    Json(user_register_req): Json<UserRegistrationReq>,
+) -> Result<StatusCode, InternalError> {
+    user_register_req
+        .validate()
+        .map_err(|_| InternalError::Validation)?;
+
+    user_service.register_user(user_register_req).await?;
+
+    Ok(StatusCode::CREATED)
 }
 
 pub async fn auth_user(
@@ -78,12 +88,14 @@ pub async fn logout(
     jar: CookieJar,
     access_claims: RoleClaims<AnyUser>,
 ) -> Result<(CookieJar, StatusCode), InternalError> {
-    user_service.delete_refresh_token(access_claims.0.sub).await?;
+    user_service
+        .delete_refresh_token(access_claims.0.sub)
+        .await?;
 
     let cookie_to_remove = Cookie::build(("refresh_token", ""))
-    .path("/")
-    .max_age(TimeDuration::days(COOKIE_LIFETIME))
-    .build();
+        .path("/")
+        .max_age(TimeDuration::days(COOKIE_LIFETIME))
+        .build();
 
     let updated_jar = jar.add(cookie_to_remove);
 

@@ -35,8 +35,14 @@ pub enum InternalError {
     #[error("JWT encoding error")]
     JWTError(String),
 
+    #[error("Entity already exists")]
+    AlreadyExists,
+
     #[error("Invalid credentials")]
     InvalidCredentials,
+
+    #[error("Validation failed")]
+    Validation,
 
     #[error("Not found")]
     NotFound,
