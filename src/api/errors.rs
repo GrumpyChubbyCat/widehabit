@@ -10,6 +10,7 @@ impl IntoResponse for InternalError {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
             InternalError::InvalidCredentials => (StatusCode::UNAUTHORIZED, self.to_string()),
+            InternalError::Blocked => (StatusCode::FORBIDDEN, self.to_string()),
             InternalError::NotFound => (StatusCode::NOT_FOUND, self.to_string()),
             _ => {
                 tracing::error!("Internal server error: {:?}", self);

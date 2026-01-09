@@ -3,7 +3,8 @@ use std::sync::Arc;
 use axum::{
     Json, Router,
     extract::State,
-    routing::{get, post},
+    http::StatusCode,
+    routing::post,
 };
 use axum_extra::extract::{
     CookieJar,
@@ -13,11 +14,14 @@ use time::Duration as TimeDuration;
 
 use crate::{
     api::{
-        extractors::{AdminOnly, RoleClaims},
+        extractors::{AnyUser, RoleClaims},
         router::AppState,
     },
     errors::InternalError,
-    model::{auth::AuthToken, user::UserAuthReq},
+    model::{
+        auth::{AuthToken, RefreshClaims},
+        user::{UserAuthReq, UserRole},
+    },
     service::user::UserService,
 };
 
@@ -26,20 +30,21 @@ const COOKIE_LIFETIME: i64 = 30;
 pub fn auth_router() -> Router<AppState> {
     Router::new()
         .route("/login", post(auth_user))
-        .route("/admin", get(admin_route))
+        .route("/refresh", post(refresh_access_token))
+        .route("/logout", post(logout))
 }
 
 pub async fn auth_user(
-    State(user_serivce): State<Arc<UserService>>,
+    State(user_service): State<Arc<UserService>>,
     jar: CookieJar,
     Json(user_info): Json<UserAuthReq>,
 ) -> Result<(CookieJar, Json<AuthToken>), InternalError> {
-    let user_data = user_serivce.authenticate(user_info).await?;
+    let user_data = user_service.authenticate(user_info).await?;
 
-    let access_token = user_serivce
+    let access_token = user_service
         .create_access_token(user_data.user_id, user_data.role as i32)
         .await?;
-    let refresh_token = user_serivce.create_refresh_token(user_data.user_id).await?;
+    let refresh_token = user_service.create_refresh_token(user_data.user_id).await?;
 
     let cookie = Cookie::build(("refresh_token", refresh_token.clone()))
         .path("/")
@@ -51,6 +56,36 @@ pub async fn auth_user(
     Ok((jar.add(cookie), Json(AuthToken { access_token })))
 }
 
-pub async fn admin_route(_access_claims: RoleClaims<AdminOnly>) -> &'static str {
-    "Welcome to admin route!"
+pub async fn refresh_access_token(
+    State(user_service): State<Arc<UserService>>,
+    refresh_claims: RefreshClaims,
+) -> Result<Json<AuthToken>, InternalError> {
+    let user_data = user_service.get_user_by_id(refresh_claims.sub).await?;
+
+    if user_data.role == UserRole::BLOCKED {
+        return Err(InternalError::Blocked);
+    }
+
+    let access_token = user_service
+        .create_access_token(user_data.user_id, user_data.role as i32)
+        .await?;
+
+    Ok(Json(AuthToken { access_token }))
+}
+
+pub async fn logout(
+    State(user_service): State<Arc<UserService>>,
+    jar: CookieJar,
+    access_claims: RoleClaims<AnyUser>,
+) -> Result<(CookieJar, StatusCode), InternalError> {
+    user_service.delete_refresh_token(access_claims.0.sub).await?;
+
+    let cookie_to_remove = Cookie::build(("refresh_token", ""))
+    .path("/")
+    .max_age(TimeDuration::days(COOKIE_LIFETIME))
+    .build();
+
+    let updated_jar = jar.add(cookie_to_remove);
+
+    Ok((updated_jar, StatusCode::NO_CONTENT))
 }

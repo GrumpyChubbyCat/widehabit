@@ -16,6 +16,18 @@ impl UserRepository {
         Self { db_pool }
     }
 
+    pub async fn find_by_user_id(&self, user_id: Uuid) -> Result<Option<User>, InternalError> {
+        let mut conn = self.db_pool.get().await?;
+
+        let user = User::query()
+            .filter(users::user_id.eq(&user_id))
+            .first::<User>(&mut conn)
+            .await
+            .optional()?;
+
+        Ok(user)
+    }
+
     pub async fn find_by_user_name(&self, username: &str) -> Result<Option<User>, InternalError> {
         let mut conn = self.db_pool.get().await?;
 
@@ -36,6 +48,16 @@ impl UserRepository {
         let mut conn = self.db_pool.get().await?;
         diesel::update(users::table.filter(users::user_id.eq(user_id)))
             .set(users::refresh_hash.eq(hashed_token))
+            .execute(&mut conn)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn delete_refresh_token(&self, user_id: Uuid) -> Result<(), InternalError> {
+        let mut conn = self.db_pool.get().await?;
+        diesel::update(users::table.filter(users::user_id.eq(user_id)))
+            .set(users::refresh_hash.eq(None::<String>))
             .execute(&mut conn)
             .await?;
 

@@ -41,16 +41,16 @@ pub fn api_router(db_pool: DbPool, auth_config: AuthConfig) -> Router {
     let trace_layer = TraceLayer::new_for_http()
         .on_request(|_request: &Request<Body>, _span: &Span| tracing::info!("request_started",))
         .on_response(|response: &Response, latency: Duration, _span: &Span| {
-            let status = response.status();
+            let res_status = response.status();
             let latency_ms = latency.as_millis();
-            let status_u16 = status.as_u16();
+            let status = res_status.as_u16();
 
-            if status.is_server_error() {
-                tracing::error!(status_u16, latency_ms, "server_error");
-            } else if status.is_client_error() {
-                tracing::warn!(status_u16, latency_ms, "client_error");
+            if res_status.is_server_error() {
+                tracing::error!(status, latency_ms, "server_error");
+            } else if res_status.is_client_error() {
+                tracing::warn!(status, latency_ms, "client_error");
             } else {
-                tracing::info!(status_u16, latency_ms, "request_success")
+                tracing::info!(status, latency_ms, "request_success")
             }
         })
         .on_failure(

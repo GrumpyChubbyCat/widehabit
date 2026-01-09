@@ -7,29 +7,29 @@ use jsonwebtoken::{EncodingKey, Header, encode};
 use uuid::Uuid;
 
 use crate::{
-    config::AuthConfig, db::repo::UserRepository, errors::InternalError, model::{
+    config::AuthConfig,
+    db::repo::UserRepository,
+    errors::InternalError,
+    model::{
         auth::{AccessClaims, RefreshClaims},
         user::{UserAuthReq, UserRole, UserRoleData},
-    }
+    },
 };
 
 pub struct UserService {
     user_repo: UserRepository,
     jwt_secret: String,
-    access_lt: i64,     // Access token lifetime
-    refresh_lt: i64,    // Refresh token lifetime
+    access_lt: i64,  // Access token lifetime
+    refresh_lt: i64, // Refresh token lifetime
 }
 
 impl UserService {
-    pub fn new(
-        user_repo: UserRepository,
-        auth_config: AuthConfig,
-    ) -> Self {
+    pub fn new(user_repo: UserRepository, auth_config: AuthConfig) -> Self {
         Self {
             user_repo,
             jwt_secret: auth_config.jwt_secret,
             access_lt: auth_config.access_lt,
-            refresh_lt: auth_config.refresh_lt
+            refresh_lt: auth_config.refresh_lt,
         }
     }
 
@@ -52,6 +52,23 @@ impl UserService {
             user_id: user.user_id,
             role: UserRole::from(user.role_id),
         })
+    }
+
+    pub async fn get_user_by_id(&self, user_id: Uuid) -> Result<UserRoleData, InternalError> {
+        let user = self
+            .user_repo
+            .find_by_user_id(user_id)
+            .await?
+            .ok_or(InternalError::NotFound)?;
+
+        Ok(UserRoleData {
+            user_id: user.user_id,
+            role: UserRole::from(user.role_id),
+        })
+    }
+
+    pub async fn delete_refresh_token(&self, user_id: Uuid) -> Result<(), InternalError> {
+        self.user_repo.delete_refresh_token(user_id).await
     }
 
     async fn verify_password(

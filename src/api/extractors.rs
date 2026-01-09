@@ -1,7 +1,10 @@
 use crate::{
     api::errors::AuthError,
     config::AuthConfig,
-    model::{auth::AccessClaims, user::UserRole},
+    model::{
+        auth::{AccessClaims, RefreshClaims},
+        user::UserRole,
+    },
 };
 use axum::{
     RequestPartsExt,
@@ -10,6 +13,7 @@ use axum::{
 };
 use axum_extra::{
     TypedHeader,
+    extract::CookieJar,
     headers::{Authorization, authorization::Bearer},
 };
 use jsonwebtoken::{DecodingKey, Validation, decode};
@@ -65,6 +69,32 @@ where
     }
 }
 
+impl<S> FromRequestParts<S> for RefreshClaims
+where
+    AuthConfig: FromRef<S>,
+    S: Send + Sync,
+{
+    type Rejection = AuthError;
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let auth_config = AuthConfig::from_ref(state);
+        let jar = CookieJar::from_headers(&parts.headers);
+
+        let refresh_token = jar
+            .get("refresh_token")
+            .map(|cookie| cookie.value())
+            .ok_or(AuthError::InvalidToken)?;
+
+        let token_data = decode::<RefreshClaims>(
+            refresh_token,
+            &DecodingKey::from_secret(auth_config.jwt_secret.as_bytes()),
+            &Validation::default(),
+        )
+        .map_err(|_| AuthError::InvalidToken)?;
+
+        Ok(token_data.claims)
+    }
+}
+
 pub struct RoleClaims<L: AccessLevel>(pub AccessClaims, PhantomData<L>);
 
 impl<S, L> FromRequestParts<S> for RoleClaims<L>
@@ -78,8 +108,7 @@ where
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let access_claims = AccessClaims::from_request_parts(parts, state).await?;
 
-        if L::is_satisfied(access_claims.role)
-        {
+        if L::is_satisfied(access_claims.role) {
             Ok(RoleClaims(access_claims, std::marker::PhantomData))
         } else {
             Err(AuthError::Forbidden)

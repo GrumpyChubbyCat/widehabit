@@ -40,4 +40,7 @@ pub enum InternalError {
 
     #[error("Not found")]
     NotFound,
+
+    #[error("User blocked")]
+    Blocked,
 }
