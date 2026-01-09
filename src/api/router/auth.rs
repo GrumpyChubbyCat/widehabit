@@ -1,6 +1,10 @@
 use std::sync::Arc;
 
-use axum::{Json, Router, extract::State, routing::post};
+use axum::{
+    Json, Router,
+    extract::State,
+    routing::{get, post},
+};
 use axum_extra::extract::{
     CookieJar,
     cookie::{Cookie, SameSite},
@@ -8,6 +12,10 @@ use axum_extra::extract::{
 use time::Duration as TimeDuration;
 
 use crate::{
+    api::{
+        extractors::{AdminOnly, RoleClaims},
+        router::AppState,
+    },
     errors::InternalError,
     model::{auth::AuthToken, user::UserAuthReq},
     service::user::UserService,
@@ -15,8 +23,10 @@ use crate::{
 
 const COOKIE_LIFETIME: i64 = 30;
 
-pub fn auth_router() -> Router<Arc<UserService>> {
-    Router::new().route("/login", post(auth_user))
+pub fn auth_router() -> Router<AppState> {
+    Router::new()
+        .route("/login", post(auth_user))
+        .route("/admin", get(admin_route))
 }
 
 pub async fn auth_user(
@@ -39,4 +49,8 @@ pub async fn auth_user(
         .build();
 
     Ok((jar.add(cookie), Json(AuthToken { access_token })))
+}
+
+pub async fn admin_route(_access_claims: RoleClaims<AdminOnly>) -> &'static str {
+    "Welcome to admin route!"
 }

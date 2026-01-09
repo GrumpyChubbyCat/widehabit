@@ -33,7 +33,7 @@ thiserror = "2.0.17"
 uuid = { version = "1.19.0", features = ["serde", "v4", "fast-rng"] }
 jsonwebtoken = { version = "10", features = ["aws_lc_rs"] }
 chrono = "0.4.42"
-axum-extra = { version = "0.12.5", features = ["cookie"] }
+axum-extra = { version = "0.12.5", features = ["cookie", "typed-header"] }
 time = "0.3.44"
 
 [profile.release]

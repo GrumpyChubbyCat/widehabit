@@ -24,3 +24,22 @@ impl IntoResponse for InternalError {
         (status, body).into_response()
     }
 }
+
+#[derive(Debug)]
+pub enum AuthError {
+    InvalidToken,
+    Forbidden,
+}
+
+impl IntoResponse for AuthError {
+    fn into_response(self) -> Response {
+        let (status, error_message) = match self {
+            AuthError::InvalidToken => (StatusCode::BAD_REQUEST, "Invalid token!"),
+            AuthError::Forbidden => (StatusCode::FORBIDDEN, "Access denied!"),
+        };
+        let body = Json(json!({
+            "error": error_message,
+        }));
+        (status, body).into_response()
+    }
+}
