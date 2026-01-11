@@ -44,11 +44,11 @@ pub fn api_router(db_pool: DbPool, auth_config: AuthConfig) -> Router {
 
     let app_state = AppState::new(auth_config, user_service);
 
-    let user_router = auth_router();
+    let auth_router = auth_router();
 
     let (router, _api) = OpenApiRouter::with_openapi(WideApiDoc::openapi())
         .routes(routes!(root_get))
-        .nest("/api/v1/auth", user_router)
+        .nest("/api/v1/auth", auth_router)
         .layer(trace_layer)
         .with_state(app_state)
         .split_for_parts();

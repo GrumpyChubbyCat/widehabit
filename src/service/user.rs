@@ -41,7 +41,7 @@ impl UserService {
             password_hash: &password_hash
         };
 
-        self.user_repo.create_new_user(new_user).await
+        self.user_repo.create(new_user).await
     }
 
     pub async fn authenticate(
