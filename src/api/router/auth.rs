@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
-use axum::{Json, Router, extract::State, http::StatusCode, routing::post};
+use axum::{Json, extract::State, http::StatusCode};
 use axum_extra::extract::{
     CookieJar,
     cookie::{Cookie, SameSite},
 };
 use time::Duration as TimeDuration;
+use utoipa_axum::{router::OpenApiRouter, routes};
 use validator::Validate;
 
 use crate::{
@@ -22,15 +23,17 @@ use crate::{
 };
 
 const COOKIE_LIFETIME: i64 = 30;
+pub const AUTH_TAG: &str = "auth";
 
-pub fn auth_router() -> Router<AppState> {
-    Router::new()
-        .route("/registration", post(register_user))
-        .route("/login", post(auth_user))
-        .route("/refresh", post(refresh_access_token))
-        .route("/logout", post(logout))
+pub fn auth_router() -> OpenApiRouter<AppState> {
+    OpenApiRouter::new()
+        .routes(routes!(register_user))
+        .routes(routes!(auth_user))
+        .routes(routes!(refresh_access_token))
+        .routes(routes!(logout))
 }
 
+#[utoipa::path(post, path = "/registration", tag = AUTH_TAG, request_body = UserRegistrationReq, responses((status = CREATED)))]
 pub async fn register_user(
     State(user_service): State<Arc<UserService>>,
     Json(user_register_req): Json<UserRegistrationReq>,
@@ -44,6 +47,7 @@ pub async fn register_user(
     Ok(StatusCode::CREATED)
 }
 
+#[utoipa::path(post, path = "/login", tag = AUTH_TAG, request_body = UserAuthReq, responses((status = OK, body=AuthToken)))]
 pub async fn auth_user(
     State(user_service): State<Arc<UserService>>,
     jar: CookieJar,
@@ -66,6 +70,7 @@ pub async fn auth_user(
     Ok((jar.add(cookie), Json(AuthToken { access_token })))
 }
 
+#[utoipa::path(post, path = "/refresh", tag = AUTH_TAG, responses((status = OK, body=AuthToken)))]
 pub async fn refresh_access_token(
     State(user_service): State<Arc<UserService>>,
     refresh_claims: RefreshClaims,
@@ -83,6 +88,7 @@ pub async fn refresh_access_token(
     Ok(Json(AuthToken { access_token }))
 }
 
+#[utoipa::path(post, path = "/logout", tag = AUTH_TAG, responses((status = NO_CONTENT)))]
 pub async fn logout(
     State(user_service): State<Arc<UserService>>,
     jar: CookieJar,

@@ -3,6 +3,7 @@ name = "widehabit"
 version = "0.1.0"
 edition = "2024"
 default-run = "widehabit"
+description = "An API for an app designed for habit trackers"
 
 [[bin]]
 name = "arghash"
@@ -24,6 +25,10 @@ tracing-subscriber = "0.3.22"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.148"
 
+# OpenAPI documentation
+utoipa = "5.4.0"
+utoipa-axum = "0.2.0"
+
 # Utility crates
 config = { version = "0.15.19", default-features = false }
 dotenv = "0.15.0"
@@ -36,6 +41,7 @@ chrono = "0.4.42"
 axum-extra = { version = "0.12.5", features = ["cookie", "typed-header"] }
 time = "0.3.44"
 validator = { version = "0.20.0", features = ["derive"] }
+utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
 
 [profile.release]
 opt-level = 3

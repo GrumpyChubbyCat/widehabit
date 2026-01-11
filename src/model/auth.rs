@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -17,7 +18,7 @@ pub struct RefreshClaims {
     pub jti: Uuid, // Unique Token ID
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(ToSchema, Deserialize, Serialize)]
 pub struct AuthToken {
     pub access_token: String,
 }

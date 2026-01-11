@@ -6,17 +6,29 @@ use axum::{
     body::Body,
     extract::{FromRef, Request},
     response::Response,
-    routing::get,
 };
 use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
 use tracing::Span;
+use utoipa::OpenApi;
+use utoipa_axum::{router::OpenApiRouter, routes};
+
+#[cfg(debug_assertions)]
+use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{
-    api::router::auth::auth_router,
+    api::{router::auth::{AUTH_TAG, auth_router}},
     config::AuthConfig,
     db::{DbPool, repo::UserRepository},
     service::user::UserService,
 };
+
+#[derive(OpenApi)]
+#[openapi(
+    tags(
+        (name = AUTH_TAG, description = "Authorization API endpoints"),
+    )
+)]
+struct WideApiDoc;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -69,13 +81,26 @@ pub fn api_router(db_pool: DbPool, auth_config: AuthConfig) -> Router {
 
     let user_router = auth_router();
 
-    Router::new()
-        .route("/", get(root_get))
+    let (router, _api) = OpenApiRouter::with_openapi(WideApiDoc::openapi())
+        .routes(routes!(root_get))
         .nest("/api/v1/auth", user_router)
         .layer(trace_layer)
         .with_state(app_state)
+        .split_for_parts();
+
+    #[cfg(debug_assertions)]
+    let router = router.merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", _api));
+
+    router
 }
 
+#[utoipa::path(
+    method(get),
+    path = "/",
+    responses(
+        (status = OK, description = "Success", body = str, content_type = "text/plain")
+    )
+)]
 async fn root_get() -> &'static str {
     "Hi from widehabit"
 }

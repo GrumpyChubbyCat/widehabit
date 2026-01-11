@@ -1,14 +1,15 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-#[derive(Deserialize)]
+#[derive(ToSchema, Deserialize)]
 pub struct UserAuthReq {
     pub username: String,
     pub password: String,
 }
 
-#[derive(Deserialize, Validate)]
+#[derive(ToSchema, Deserialize, Validate)]
 pub struct UserRegistrationReq {
     #[validate(email(message = "invalid_email_format"))]
     pub email: String,
