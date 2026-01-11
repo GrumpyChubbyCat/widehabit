@@ -38,8 +38,7 @@ impl UserService {
         let new_user = NewUser {
             username: &user_data.username,
             email: &user_data.email,
-            password_hash: &password_hash,
-            role_id: UserRole::USER as i32
+            password_hash: &password_hash
         };
 
         self.user_repo.create_new_user(new_user).await

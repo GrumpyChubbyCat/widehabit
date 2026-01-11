@@ -25,7 +25,7 @@ const COOKIE_LIFETIME: i64 = 30;
 
 pub fn auth_router() -> Router<AppState> {
     Router::new()
-        .route("/register", post(register_user))
+        .route("/registration", post(register_user))
         .route("/login", post(auth_user))
         .route("/refresh", post(refresh_access_token))
         .route("/logout", post(logout))

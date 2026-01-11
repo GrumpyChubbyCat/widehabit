@@ -19,5 +19,4 @@ pub struct NewUser<'a> {
     pub username: &'a str,
     pub email: &'a str,
     pub password_hash: &'a str,
-    pub role_id: i32,
 }

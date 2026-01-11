@@ -6,7 +6,7 @@ use crate::{
     db::{
         DbPool,
         entity::{NewUser, User},
-        schema::users::{self},
+        schema::users,
     },
     errors::InternalError,
 };
@@ -24,21 +24,26 @@ impl UserRepository {
         let mut conn = self.db_pool.get().await?;
 
         diesel::insert_into(users::table)
-        .values(&new_user)
-        .execute(&mut conn)
-        .await
-        .map_err(|e|{
-            if let diesel::result::Error::DatabaseError(
-                diesel::result::DatabaseErrorKind::UniqueViolation, 
-                _
-            ) = e {
-                tracing::warn!(email = %new_user.email, user_name = %new_user.username, "registration_failed_duplicate");
-                return InternalError::AlreadyExists; // 409 Conflict
-            }
+            .values(&new_user)
+            .execute(&mut conn)
+            .await
+            .map_err(|e| {
+                if let diesel::result::Error::DatabaseError(
+                    diesel::result::DatabaseErrorKind::UniqueViolation,
+                    _,
+                ) = e
+                {
+                    tracing::warn!(
+                        email = new_user.email,
+                        user_name = new_user.username,
+                        "registration_failed_duplicate"
+                    );
+                    return InternalError::AlreadyExists; // 409 Conflict
+                }
 
-            tracing::error!(error = %e, "database_error_during_registration");
-            InternalError::from(e)
-        })?;
+                tracing::error!(error = ?e, "database_error_during_registration");
+                InternalError::from(e)
+            })?;
         Ok(())
     }
 
