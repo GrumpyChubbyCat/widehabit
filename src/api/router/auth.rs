@@ -88,7 +88,7 @@ pub async fn refresh_access_token(
     Ok(Json(AuthToken { access_token }))
 }
 
-#[utoipa::path(post, path = "/logout", tag = AUTH_TAG, responses((status = NO_CONTENT)))]
+#[utoipa::path(post, path = "/logout", tag = AUTH_TAG, responses((status = NO_CONTENT)), security(("api_key" = [])))]
 pub async fn logout(
     State(user_service): State<Arc<UserService>>,
     jar: CookieJar,

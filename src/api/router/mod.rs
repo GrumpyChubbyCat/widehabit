@@ -1,12 +1,7 @@
 pub mod auth;
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
-use axum::{
-    Router,
-    body::Body,
-    extract::{FromRef, Request},
-    response::Response,
-};
+use axum::{Router, body::Body, extract::Request, response::Response};
 use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
 use tracing::Span;
 use utoipa::OpenApi;
@@ -16,38 +11,11 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{
-    api::{router::auth::{AUTH_TAG, auth_router}},
+    api::{docs::WideApiDoc, router::auth::auth_router, state::AppState},
     config::AuthConfig,
     db::{DbPool, repo::UserRepository},
     service::user::UserService,
 };
-
-#[derive(OpenApi)]
-#[openapi(
-    tags(
-        (name = AUTH_TAG, description = "Authorization API endpoints"),
-    )
-)]
-struct WideApiDoc;
-
-#[derive(Clone)]
-pub struct AppState {
-    pub auth_config: AuthConfig,
-    pub user_service: Arc<UserService>,
-}
-
-impl FromRef<AppState> for AuthConfig {
-    fn from_ref(state: &AppState) -> Self {
-        state.auth_config.clone()
-    }
-}
-
-// Allows use State(user_service): State<Arc<UserService>>
-impl FromRef<AppState> for Arc<UserService> {
-    fn from_ref(state: &AppState) -> Self {
-        state.user_service.clone()
-    }
-}
 
 pub fn api_router(db_pool: DbPool, auth_config: AuthConfig) -> Router {
     let trace_layer = TraceLayer::new_for_http()
@@ -72,12 +40,9 @@ pub fn api_router(db_pool: DbPool, auth_config: AuthConfig) -> Router {
         );
 
     let user_repo = UserRepository::new(db_pool);
-    let user_service = Arc::new(UserService::new(user_repo, auth_config.clone()));
+    let user_service = UserService::new(user_repo, auth_config.clone());
 
-    let app_state = AppState {
-        auth_config,
-        user_service,
-    };
+    let app_state = AppState::new(auth_config, user_service);
 
     let user_router = auth_router();
 
