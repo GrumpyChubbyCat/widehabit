@@ -1,4 +1,5 @@
 use crate::db::schema::users;
+use chrono::{DateTime, Utc};
 use diesel::{HasQuery, Insertable};
 use uuid::Uuid;
 
@@ -11,6 +12,8 @@ pub struct User {
     pub password_hash: String,
     pub refresh_hash: Option<String>,
     pub role_id: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Insertable, PartialEq, Debug)]
