@@ -31,7 +31,11 @@ impl HabitRepository {
         Ok(())
     }
 
-    pub async fn find_by_habit_id(&self, habit_id: Uuid, user_id: Uuid) -> Result<Option<Habit>, InternalError> {
+    pub async fn find_by_habit_id(
+        &self,
+        habit_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<Option<Habit>, InternalError> {
         let mut conn = self.db_pool.get().await?;
 
         let habit = Habit::query()
@@ -48,15 +52,17 @@ impl HabitRepository {
         &self,
         user_id: Uuid,
         page: i64,
-        page_size: i64,
+        limit: i64,
     ) -> Result<CountedEntities<Habit>, InternalError> {
         let mut conn = self.db_pool.get().await?;
 
-        let habits = Habit::query()
+        let safe_page = if page < 1 { 1 } else { page };
+        let offset = (safe_page - 1) * limit;
+        let habits = habits::table
             .filter(habits::user_id.eq(user_id))
             .order(habits::created_at.desc())
-            .limit(page_size)
-            .offset(page)
+            .limit(limit)
+            .offset(offset) // Вот теперь тут будет 0 для первой страницы
             .load::<Habit>(&mut conn)
             .await?;
 

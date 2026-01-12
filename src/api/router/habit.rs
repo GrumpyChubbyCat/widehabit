@@ -97,8 +97,8 @@ pub async fn get_habit(
 )]
 pub async fn get_habits(
     State(habit_service): State<Arc<HabitService>>,
-    Query(params): Query<PaginationParams>,
     access_claims: RoleClaims<AnyUser>,
+    params: Query<PaginationParams>,
 ) -> Result<Json<PagedResponse<HabitData>>, InternalError> {
     let user_id = access_claims.0.sub;
 
