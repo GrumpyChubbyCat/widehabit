@@ -38,6 +38,9 @@ pub fn habit_router() -> OpenApiRouter<AppState> {
     request_body = NewHabitReq, 
     responses(
         (status = CREATED, description = "New habit has been created")
+    ),
+    security(
+        ("api_key" = [])
     )
 )]
 pub async fn create_habit(
@@ -52,7 +55,6 @@ pub async fn create_habit(
     Ok(StatusCode::CREATED)
 }
 
-
 #[utoipa::path(
     get, 
     path = "/{habit_id}",
@@ -63,6 +65,9 @@ pub async fn create_habit(
     responses(
         (status = 200, description = "Single habit", body = HabitData),
         (status = 404, description = "Habit not found or access denied")
+    ),
+    security(
+        ("api_key" = [])
     )
 )]
 pub async fn get_habit(
@@ -85,6 +90,9 @@ pub async fn get_habit(
     params(PaginationParams),
     responses(
         (status = 200, description = "Habits list", body = inline(PagedResponse<HabitData>))
+    ),
+    security(
+        ("api_key" = [])
     )
 )]
 pub async fn get_habits(
