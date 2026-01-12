@@ -46,5 +46,5 @@ pub struct Habit {
 pub struct NewHabit<'a> {
     pub user_id: Uuid,
     pub title: &'a str,
-    pub about: &'a str,
+    pub about: Option<&'a str>,
 }

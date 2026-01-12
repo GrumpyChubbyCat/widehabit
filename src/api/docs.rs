@@ -1,4 +1,4 @@
-use crate::api::router::auth::AUTH_TAG;
+use crate::api::router::{auth::AUTH_TAG, habit::HABIT_TAG, health::HEALTH_TAG};
 use utoipa::{
     Modify, OpenApi,
     openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
@@ -8,7 +8,9 @@ use utoipa::{
 #[openapi(
     modifiers(&SecurityAddon),
     tags(
+        (name = HEALTH_TAG, description = "Service healthckeck"),
         (name = AUTH_TAG, description = "Authorization API endpoints"),
+        (name = HABIT_TAG, description = "Habits API endpoints"),
     )
 )]
 pub struct WideApiDoc;

@@ -1,20 +1,23 @@
 pub mod auth;
+pub mod habit;
+pub mod health;
+
 use std::time::Duration;
 
 use axum::{Router, body::Body, extract::Request, response::Response};
 use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
 use tracing::Span;
 use utoipa::OpenApi;
-use utoipa_axum::{router::OpenApiRouter, routes};
+use utoipa_axum::router::OpenApiRouter;
 
 #[cfg(debug_assertions)]
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{
-    api::{docs::WideApiDoc, router::auth::auth_router, state::AppState},
+    api::{docs::WideApiDoc, router::{auth::auth_router, habit::habit_router, health::health_router}, state::AppState},
     config::AuthConfig,
-    db::{DbPool, repo::UserRepository},
-    service::user::UserService,
+    db::{DbPool, repo::{habit::HabitRepository, user::UserRepository}},
+    service::{habit::HabitService, user::UserService},
 };
 
 pub fn api_router(db_pool: DbPool, auth_config: AuthConfig) -> Router {
@@ -39,16 +42,21 @@ pub fn api_router(db_pool: DbPool, auth_config: AuthConfig) -> Router {
             },
         );
 
-    let user_repo = UserRepository::new(db_pool);
+    let user_repo = UserRepository::new(db_pool.clone());
+    let habit_repo = HabitRepository::new(db_pool.clone());
     let user_service = UserService::new(user_repo, auth_config.clone());
+    let habit_service = HabitService::new(habit_repo);
 
-    let app_state = AppState::new(auth_config, user_service);
-
+    let app_state = AppState::new(auth_config, user_service, habit_service);
+    
+    let health_router = health_router();
     let auth_router = auth_router();
+    let habit_router = habit_router();
 
     let (router, _api) = OpenApiRouter::with_openapi(WideApiDoc::openapi())
-        .routes(routes!(root_get))
+        .nest("/api/v1/health", health_router)
         .nest("/api/v1/auth", auth_router)
+        .nest("/api/v1/habit", habit_router)
         .layer(trace_layer)
         .with_state(app_state)
         .split_for_parts();
@@ -57,15 +65,4 @@ pub fn api_router(db_pool: DbPool, auth_config: AuthConfig) -> Router {
     let router = router.merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", _api));
 
     router
-}
-
-#[utoipa::path(
-    method(get),
-    path = "/",
-    responses(
-        (status = OK, description = "Success", body = str, content_type = "text/plain")
-    )
-)]
-async fn root_get() -> &'static str {
-    "Hi from widehabit"
 }

@@ -33,7 +33,15 @@ pub fn auth_router() -> OpenApiRouter<AppState> {
         .routes(routes!(logout))
 }
 
-#[utoipa::path(post, path = "/registration", tag = AUTH_TAG, request_body = UserRegistrationReq, responses((status = CREATED)))]
+#[utoipa::path(
+    post, 
+    path = "/registration", 
+    tag = AUTH_TAG, 
+    request_body = UserRegistrationReq, 
+    responses(
+        (status = CREATED)
+    )
+)]
 pub async fn register_user(
     State(user_service): State<Arc<UserService>>,
     Json(user_register_req): Json<UserRegistrationReq>,
@@ -42,12 +50,20 @@ pub async fn register_user(
         .validate()
         .map_err(|_| InternalError::Validation)?;
 
-    user_service.register_user(user_register_req).await?;
+    user_service.register(user_register_req).await?;
 
     Ok(StatusCode::CREATED)
 }
 
-#[utoipa::path(post, path = "/login", tag = AUTH_TAG, request_body = UserAuthReq, responses((status = OK, body=AuthToken)))]
+#[utoipa::path(
+    post, 
+    path = "/login", 
+    tag = AUTH_TAG, 
+    request_body = UserAuthReq, 
+    responses(
+        (status = OK, body=AuthToken)
+    )
+)]
 pub async fn auth_user(
     State(user_service): State<Arc<UserService>>,
     jar: CookieJar,
@@ -70,12 +86,19 @@ pub async fn auth_user(
     Ok((jar.add(cookie), Json(AuthToken { access_token })))
 }
 
-#[utoipa::path(post, path = "/refresh", tag = AUTH_TAG, responses((status = OK, body=AuthToken)))]
+#[utoipa::path(
+    post, 
+    path = "/refresh", 
+    tag = AUTH_TAG, 
+    responses(
+        (status = OK, body=AuthToken)
+    )
+)]
 pub async fn refresh_access_token(
     State(user_service): State<Arc<UserService>>,
     refresh_claims: RefreshClaims,
 ) -> Result<Json<AuthToken>, InternalError> {
-    let user_data = user_service.get_user_by_id(refresh_claims.sub).await?;
+    let user_data = user_service.get_by_id(refresh_claims.sub).await?;
 
     if user_data.role == UserRole::BLOCKED {
         return Err(InternalError::Blocked);
@@ -88,7 +111,17 @@ pub async fn refresh_access_token(
     Ok(Json(AuthToken { access_token }))
 }
 
-#[utoipa::path(post, path = "/logout", tag = AUTH_TAG, responses((status = NO_CONTENT)), security(("api_key" = [])))]
+#[utoipa::path(
+    post, 
+    path = "/logout", 
+    tag = AUTH_TAG, 
+    responses(
+        (status = NO_CONTENT)
+    ), 
+    security(
+        ("api_key" = [])
+    )
+)]
 pub async fn logout(
     State(user_service): State<Arc<UserService>>,
     jar: CookieJar,

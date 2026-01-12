@@ -2,18 +2,20 @@ use std::sync::Arc;
 
 use axum::extract::FromRef;
 
-use crate::{config::AuthConfig, service::user::UserService};
+use crate::{config::AuthConfig, service::{habit::HabitService, user::UserService}};
 
 #[derive(Clone)]
 pub struct AppState {
     pub auth_config: AuthConfig,
     pub user_service: Arc<UserService>,
+    pub habit_service: Arc<HabitService>
 }
 
 impl AppState {
-    pub fn new(auth_config: AuthConfig, user_service: UserService) -> Self {
+    pub fn new(auth_config: AuthConfig, user_service: UserService, habit_service: HabitService) -> Self {
         let user_service = Arc::new(user_service);
-        Self { auth_config, user_service }
+        let habit_service = Arc::new(habit_service);
+        Self { auth_config, user_service, habit_service }
     }
 }
 
@@ -27,5 +29,11 @@ impl FromRef<AppState> for AuthConfig {
 impl FromRef<AppState> for Arc<UserService> {
     fn from_ref(state: &AppState) -> Self {
         state.user_service.clone()
+    }
+}
+
+impl FromRef<AppState> for Arc<HabitService> {
+    fn from_ref(state: &AppState) -> Self {
+        state.habit_service.clone()
     }
 }
