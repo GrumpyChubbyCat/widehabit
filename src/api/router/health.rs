@@ -15,7 +15,7 @@ pub fn health_router() ->OpenApiRouter<AppState> {
     path = "/healthcheck",
     tag = HEALTH_TAG,
     responses(
-        (status = OK, description = "Success", body = str, content_type = "text/plain")
+        (status = OK, description = "Success")
     )
 )]
 async fn healthcheck() -> StatusCode {

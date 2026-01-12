@@ -32,7 +32,7 @@ CREATE TABLE
         day_of_week SMALLINT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
         start_time TIME NOT NULL,
         end_time TIME NOT NULL,
-        is_active BOOLEAN NOT NULL DEFAULT TRUE, -- Позволяет хранить старые версии планов
+        is_active BOOLEAN NOT NULL DEFAULT TRUE, -- Allows to store old versions of plans
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW (),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW (),
         CONSTRAINT start_before_end CHECK (start_time < end_time)

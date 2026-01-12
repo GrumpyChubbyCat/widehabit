@@ -2,14 +2,18 @@ use std::net::Ipv4Addr;
 
 use config::{Config, ConfigError, Environment};
 use serde::Deserialize;
+use serde_aux::field_attributes::deserialize_number_from_string;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct AuthConfig {
     #[serde(default = "default_jwt_secret")]
+    #[serde(deserialize_with = "deserialize_number_from_string")]
     pub jwt_secret: String,
     #[serde(default = "default_access_lt")] 
+    #[serde(deserialize_with = "deserialize_number_from_string")]
     pub access_lt: i64, // Access token lifetime
     #[serde(default = "default_refresh_lt")]
+    #[serde(deserialize_with = "deserialize_number_from_string")]
     pub refresh_lt: i64, // Refresh token lifetime
 }
 
@@ -24,6 +28,7 @@ pub struct WideConfig {
     #[serde(default = "default_db")]
     pub database_url: String,
     #[serde(default = "default_db_pool")]
+    #[serde(deserialize_with = "deserialize_number_from_string")]
     pub database_pool: u32,
     #[serde(flatten)]
     pub auth_config: AuthConfig,
