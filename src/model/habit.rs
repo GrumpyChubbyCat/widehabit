@@ -32,3 +32,10 @@ pub struct NewHabitReq {
     pub name: String,
     pub description: Option<String>
 }
+
+#[derive(ToSchema, Serialize)]
+pub struct UpdateHabitRes {
+    pub habit_id: Uuid,
+    pub name: String,
+    pub description: Option<String>
+}

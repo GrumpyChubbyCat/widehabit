@@ -1,3 +1,4 @@
+use chrono::Utc;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 use uuid::Uuid;
@@ -20,15 +21,15 @@ impl HabitRepository {
         Self { db_pool }
     }
 
-    pub async fn create(&self, new_habit: NewHabit<'_>) -> Result<(), InternalError> {
+    pub async fn create(&self, new_habit: NewHabit<'_>) -> Result<Habit, InternalError> {
         let mut conn = self.db_pool.get().await?;
 
-        diesel::insert_into(habits::table)
+        let created_habit = diesel::insert_into(habits::table)
             .values(&new_habit)
-            .execute(&mut conn)
+            .get_result::<Habit>(&mut conn)
             .await?;
 
-        Ok(())
+        Ok(created_habit)
     }
 
     pub async fn find_by_habit_id(
@@ -56,13 +57,13 @@ impl HabitRepository {
     ) -> Result<CountedEntities<Habit>, InternalError> {
         let mut conn = self.db_pool.get().await?;
 
-        let safe_page = if page < 1 { 1 } else { page };
+        let safe_page = if page < 1 { 1 } else { page }; // Normalization for safety
         let offset = (safe_page - 1) * limit;
         let habits = habits::table
             .filter(habits::user_id.eq(user_id))
             .order(habits::created_at.desc())
             .limit(limit)
-            .offset(offset) // Вот теперь тут будет 0 для первой страницы
+            .offset(offset) 
             .load::<Habit>(&mut conn)
             .await?;
 
@@ -78,5 +79,33 @@ impl HabitRepository {
         };
 
         Ok(counted_habits)
+    }
+
+    pub async fn update(&self, habit_id: Uuid, user_id: Uuid, new_title: &str, new_about: Option<&str>) -> Result<(), InternalError> {
+        let mut conn = self.db_pool.get().await?;
+
+        diesel::update(habits::table)
+            .filter(habits::habit_id.eq(habit_id))
+            .filter(habits::user_id.eq(user_id))
+            .set((
+                habits::title.eq(new_title),
+                habits::about.eq(new_about),
+                habits::updated_at.eq(Utc::now())
+            )).execute(&mut conn)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn delete(&self, habit_id: Uuid, user_id: Uuid) -> Result<(), InternalError> {
+        let mut conn = self.db_pool.get().await?;
+
+        diesel::delete(habits::table)
+            .filter(habits::habit_id.eq(habit_id))
+            .filter(habits::user_id.eq(user_id))
+            .execute(&mut conn)
+            .await?;
+
+        Ok(())
     }
 }
