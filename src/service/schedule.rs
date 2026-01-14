@@ -26,10 +26,14 @@ impl HabitScheduleService {
         user_id: Uuid,
         schedule_items: Vec<ScheduleItemReq>,
     ) -> Result<Vec<ScheduleItemRes>, InternalError> {
+
+        let version_id = Uuid::new_v4();
+
         let new_plans: Vec<NewHabitSchedule> = schedule_items
             .into_iter()
             .map(|item| NewHabitSchedule {
                 habit_id,
+                version_id,
                 day_of_week: item.day.into(),
                 start_time: item.start_time,
                 end_time: item.end_time,
