@@ -27,7 +27,7 @@ serde_json = "1.0.148"
 serde-aux = "4.7.0"
 
 # OpenAPI documentation
-utoipa = { version = "5.4.0", features = ["uuid", "axum_extras"] }
+utoipa = { version = "5.4.0", features = ["uuid", "axum_extras", "chrono"] }
 utoipa-axum = "0.2.0"
 utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
 
@@ -39,7 +39,7 @@ rand = "0.9.2"
 thiserror = "2.0.17"
 uuid = { version = "1.19.0", features = ["serde", "v4", "fast-rng"] }
 jsonwebtoken = { version = "10", features = ["aws_lc_rs"] }
-chrono = "0.4.42"
+chrono = { version = "0.4.42", features = ["serde"] }
 axum-extra = { version = "0.12.5", features = ["cookie", "typed-header"] }
 time = "0.3.44"
 validator = { version = "0.20.0", features = ["derive"] }

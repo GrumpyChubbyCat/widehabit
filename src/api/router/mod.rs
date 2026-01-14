@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod habit;
 pub mod health;
+pub mod schedule;
 
 use std::time::Duration;
 
@@ -14,13 +15,23 @@ use utoipa_axum::router::OpenApiRouter;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{
-    api::{docs::WideApiDoc, router::{auth::auth_router, habit::habit_router, health::health_router}, state::AppState},
+    api::{
+        docs::WideApiDoc,
+        router::{auth::auth_router, habit::habit_router, health::health_router, schedule::schedule_router},
+        state::AppState,
+    },
     config::AuthConfig,
-    db::{DbPool, repo::{habit::HabitRepository, user::UserRepository}},
-    service::{habit::HabitService, user::UserService},
+    db::{
+        DbPool,
+        repo::{habit::HabitRepository, schedule::HabitScheduleRepository, user::UserRepository},
+    },
+    service::{habit::HabitService, schedule::HabitScheduleService, user::UserService},
 };
 
+const API_PREFIX: &str = "/api/v1";
+
 pub fn api_router(db_pool: DbPool, auth_config: AuthConfig) -> Router {
+
     let trace_layer = TraceLayer::new_for_http()
         .on_request(|_request: &Request<Body>, _span: &Span| tracing::info!("request_started",))
         .on_response(|response: &Response, latency: Duration, _span: &Span| {
@@ -44,19 +55,22 @@ pub fn api_router(db_pool: DbPool, auth_config: AuthConfig) -> Router {
 
     let user_repo = UserRepository::new(db_pool.clone());
     let habit_repo = HabitRepository::new(db_pool.clone());
+    let schedule_repo = HabitScheduleRepository::new(db_pool.clone());
+
     let user_service = UserService::new(user_repo, auth_config.clone());
     let habit_service = HabitService::new(habit_repo);
+    let schedule_service = HabitScheduleService::new(schedule_repo);
 
-    let app_state = AppState::new(auth_config, user_service, habit_service);
-    
-    let health_router = health_router();
-    let auth_router = auth_router();
-    let habit_router = habit_router();
+    let app_state = AppState::new(auth_config, user_service, habit_service, schedule_service);
+
+    let api_routes = OpenApiRouter::new()
+        .nest("/health", health_router())
+        .nest("/auth", auth_router())
+        .nest("/habit", habit_router())
+        .nest("/shcedule", schedule_router());
 
     let (router, _api) = OpenApiRouter::with_openapi(WideApiDoc::openapi())
-        .nest("/api/v1/health", health_router)
-        .nest("/api/v1/auth", auth_router)
-        .nest("/api/v1/habit", habit_router)
+        .nest(API_PREFIX, api_routes)
         .layer(trace_layer)
         .with_state(app_state)
         .split_for_parts();

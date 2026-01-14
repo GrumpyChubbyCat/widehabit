@@ -24,6 +24,7 @@ diesel::table! {
         is_active -> Bool,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        version_id -> Uuid,
     }
 }
 

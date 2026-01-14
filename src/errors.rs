@@ -35,6 +35,9 @@ pub enum InternalError {
     #[error("JWT encoding error")]
     JWTError(String),
 
+    #[error("Internal cast error")] 
+    Cast(String),
+
     #[error("Entity already exists")]
     AlreadyExists,
 
