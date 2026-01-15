@@ -2,7 +2,7 @@
 
 diesel::table! {
     habit_logs (habit_log_id) {
-        habit_log_id -> Int8,
+        habit_log_id -> Uuid,
         habit_id -> Uuid,
         habit_schedule_id -> Nullable<Uuid>,
         log_date -> Date,

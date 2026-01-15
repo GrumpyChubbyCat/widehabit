@@ -48,7 +48,7 @@ pub async fn register_user(
 ) -> Result<StatusCode, InternalError> {
     user_register_req
         .validate()
-        .map_err(|_| InternalError::Validation)?;
+        .map_err(|e| InternalError::Validation(e.to_string()))?;
 
     user_service.register(user_register_req).await?;
 

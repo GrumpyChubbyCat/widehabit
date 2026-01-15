@@ -20,13 +20,36 @@ impl HabitScheduleService {
         }
     }
 
-    pub async fn update_schedule(
+    pub async fn get(
+        &self,
+        habit_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<Vec<ScheduleItemRes>, InternalError> {
+        let last_plans_db = self.habit_schedule_repo.get(habit_id, user_id).await?;
+
+       last_plans_db
+            .into_iter()
+            .map(|schedule_item| {
+                Ok(ScheduleItemRes {
+                    schedule_id: schedule_item.habit_schedule_id,
+                    habit_id: schedule_item.habit_id,
+                    version_id: schedule_item.version_id,
+                    day: DayOfWeek::try_from(schedule_item.day_of_week)
+                        .map_err(|_| InternalError::Cast("Cant cast i16 to DayOfWeek".into()))?,
+                    start_time: schedule_item.start_time,
+                    end_time: schedule_item.end_time,
+                    created_at: schedule_item.created_at,
+                })
+            })
+            .collect()
+    }
+
+    pub async fn update(
         &self,
         habit_id: Uuid,
         user_id: Uuid,
         schedule_items: Vec<ScheduleItemReq>,
     ) -> Result<Vec<ScheduleItemRes>, InternalError> {
-
         let version_id = Uuid::new_v4();
 
         let new_plans: Vec<NewHabitSchedule> = schedule_items
@@ -40,12 +63,12 @@ impl HabitScheduleService {
             })
             .collect();
 
-        let new_plans = self
+        let new_plans_db = self
             .habit_schedule_repo
-            .update_schedule(habit_id, user_id, new_plans)
+            .update(habit_id, user_id, new_plans)
             .await?;
 
-        let new_plans_res: Vec<ScheduleItemRes> = new_plans
+        new_plans_db
             .into_iter()
             .map(|schedule_item| {
                 Ok(ScheduleItemRes {
@@ -53,14 +76,12 @@ impl HabitScheduleService {
                     habit_id: schedule_item.habit_id,
                     version_id: schedule_item.version_id,
                     day: DayOfWeek::try_from(schedule_item.day_of_week)
-                        .map_err(|_| InternalError::Cast("Cant cast i16 to DayOfWeel".into()))?,
+                        .map_err(|_| InternalError::Cast("Cant cast i16 to DayOfWeek".into()))?,
                     start_time: schedule_item.start_time,
                     end_time: schedule_item.end_time,
                     created_at: schedule_item.created_at,
                 })
             })
-            .collect::<Result<Vec<_>, InternalError>>()?;
-
-        Ok(new_plans_res)
+            .collect()
     }
 }

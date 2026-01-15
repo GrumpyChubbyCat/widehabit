@@ -20,7 +20,39 @@ impl HabitScheduleRepository {
         Self { db_pool }
     }
 
-    pub async fn update_schedule(
+    pub async fn get(
+        &self,
+        habit_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<Vec<HabitSchedule>, InternalError> {
+        let mut conn = self.db_pool.get().await?;
+
+        conn
+            .transaction::<Vec<HabitSchedule>, InternalError, _>(|conn| {
+                Box::pin(async move {
+                    let count = habits::table
+                        .filter(habits::habit_id.eq(habit_id))
+                        .filter(habits::user_id.eq(user_id))
+                        .execute(conn)
+                        .await?;
+
+                    if count == 0 {
+                        return Err(InternalError::NotFound);
+                    }
+
+                    let items = HabitSchedule::query()
+                        .filter(habit_schedules::habit_id.eq(habit_id))
+                        .filter(habit_schedules::is_active.eq(true))
+                        .order((habit_schedules::day_of_week.asc(), habit_schedules::start_time.asc()))
+                        .get_results::<HabitSchedule>(conn)
+                        .await?;
+                    Ok(items)
+                })
+            })
+            .await
+    }
+
+    pub async fn update(
         &self,
         habit_id: Uuid,
         user_id: Uuid,

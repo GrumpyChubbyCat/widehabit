@@ -45,7 +45,7 @@ pub enum InternalError {
     InvalidCredentials,
 
     #[error("Validation failed")]
-    Validation,
+    Validation(String),
 
     #[error("Not found")]
     NotFound,

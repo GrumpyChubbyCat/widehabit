@@ -13,6 +13,7 @@ impl IntoResponse for InternalError {
             InternalError::AlreadyExists => (StatusCode::CONFLICT, self.to_string()),
             InternalError::Blocked => (StatusCode::FORBIDDEN, self.to_string()),
             InternalError::NotFound => (StatusCode::NOT_FOUND, self.to_string()),
+            InternalError::Validation(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()),
             _ => {
                 tracing::error!("Internal server error: {:?}", self);
                 (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
