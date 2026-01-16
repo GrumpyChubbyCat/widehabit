@@ -27,7 +27,7 @@ impl HabitScheduleService {
     ) -> Result<Vec<ScheduleItemRes>, InternalError> {
         let last_plans_db = self.habit_schedule_repo.get(habit_id, user_id).await?;
 
-       last_plans_db
+        last_plans_db
             .into_iter()
             .map(|schedule_item| {
                 Ok(ScheduleItemRes {

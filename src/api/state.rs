@@ -4,7 +4,7 @@ use axum::extract::FromRef;
 
 use crate::{
     config::AuthConfig,
-    service::{habit::HabitService, schedule::HabitScheduleService, user::UserService},
+    service::{habit::HabitService, log::HabitLogService, schedule::HabitScheduleService, user::UserService},
 };
 
 #[derive(Clone)]
@@ -13,6 +13,7 @@ pub struct AppState {
     pub user_service: Arc<UserService>,
     pub habit_service: Arc<HabitService>,
     pub schedule_service: Arc<HabitScheduleService>,
+    pub log_service: Arc<HabitLogService>
 }
 
 impl AppState {
@@ -21,16 +22,19 @@ impl AppState {
         user_service: UserService,
         habit_service: HabitService,
         schedule_service: HabitScheduleService,
+        log_service: HabitLogService,
     ) -> Self {
         let user_service = Arc::new(user_service);
         let habit_service = Arc::new(habit_service);
         let schedule_service = Arc::new(schedule_service);
+        let log_service = Arc::new(log_service);
 
         Self {
             auth_config,
             user_service,
             habit_service,
             schedule_service,
+            log_service
         }
     }
 }
@@ -57,5 +61,11 @@ impl FromRef<AppState> for Arc<HabitService> {
 impl FromRef<AppState> for Arc<HabitScheduleService> {
     fn from_ref(state: &AppState) -> Self {
         state.schedule_service.clone()
+    }
+}
+
+impl FromRef<AppState> for Arc<HabitLogService> {
+    fn from_ref(state: &AppState) -> Self {
+        state.log_service.clone()
     }
 }

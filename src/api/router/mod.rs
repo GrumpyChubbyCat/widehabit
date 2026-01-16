@@ -2,6 +2,7 @@ pub mod auth;
 pub mod habit;
 pub mod health;
 pub mod schedule;
+pub mod log;
 
 use std::time::Duration;
 
@@ -17,15 +18,15 @@ use utoipa_swagger_ui::SwaggerUi;
 use crate::{
     api::{
         docs::WideApiDoc,
-        router::{auth::auth_router, habit::habit_router, health::health_router, schedule::schedule_router},
+        router::{auth::auth_router, habit::habit_router, health::health_router, log::log_router, schedule::schedule_router},
         state::AppState,
     },
     config::AuthConfig,
     db::{
         DbPool,
-        repo::{habit::HabitRepository, schedule::HabitScheduleRepository, user::UserRepository},
+        repo::{habit::HabitRepository, log::HabitLogRepository, schedule::HabitScheduleRepository, user::UserRepository},
     },
-    service::{habit::HabitService, schedule::HabitScheduleService, user::UserService},
+    service::{habit::HabitService, log::HabitLogService, schedule::HabitScheduleService, user::UserService},
 };
 
 const API_PREFIX: &str = "/api/v1";
@@ -56,18 +57,21 @@ pub fn api_router(db_pool: DbPool, auth_config: AuthConfig) -> Router {
     let user_repo = UserRepository::new(db_pool.clone());
     let habit_repo = HabitRepository::new(db_pool.clone());
     let schedule_repo = HabitScheduleRepository::new(db_pool.clone());
+    let log_repo = HabitLogRepository::new(db_pool);
 
     let user_service = UserService::new(user_repo, auth_config.clone());
     let habit_service = HabitService::new(habit_repo);
     let schedule_service = HabitScheduleService::new(schedule_repo);
+    let log_service = HabitLogService::new(log_repo);
 
-    let app_state = AppState::new(auth_config, user_service, habit_service, schedule_service);
+    let app_state = AppState::new(auth_config, user_service, habit_service, schedule_service, log_service);
 
     let api_routes = OpenApiRouter::new()
         .nest("/health", health_router())
         .nest("/auth", auth_router())
         .nest("/habit", habit_router())
-        .nest("/shcedule", schedule_router());
+        .nest("/shcedule", schedule_router())
+        .nest("/log", log_router());
 
     let (router, _api) = OpenApiRouter::with_openapi(WideApiDoc::openapi())
         .nest(API_PREFIX, api_routes)

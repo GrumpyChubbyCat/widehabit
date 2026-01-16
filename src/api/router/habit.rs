@@ -52,7 +52,7 @@ pub async fn create_habit(
 ) -> Result<(StatusCode, Json<HabitData>), InternalError> {
     let user_id = access_claims.0.sub;
 
-    let added_habit = habit_service.add_new(new_habit_req, user_id).await?;
+    let added_habit = habit_service.create(new_habit_req, user_id).await?;
 
     Ok((StatusCode::CREATED, Json(added_habit)))
 }
@@ -97,7 +97,7 @@ pub async fn get_habit(
         ("api_key" = [])
     )
 )]
-pub async fn get_habits(
+async fn get_habits(
     State(habit_service): State<Arc<HabitService>>,
     access_claims: RoleClaims<AnyUser>,
     params: Query<PaginationParams>,
@@ -122,7 +122,7 @@ pub async fn get_habits(
         ("api_key" = [])
     )
 )]
-pub async fn update_habit(
+async fn update_habit(
     State(habit_service): State<Arc<HabitService>>,
     access_claims: RoleClaims<AnyUser>,
     Path(habit_id): Path<Uuid>,
@@ -148,7 +148,7 @@ pub async fn update_habit(
         ("api_key" = [])
     )
 )]
-pub async fn delete_habit(
+async fn delete_habit(
     State(habit_service): State<Arc<HabitService>>,
     access_claims: RoleClaims<AnyUser>,
     Path(habit_id): Path<Uuid>,

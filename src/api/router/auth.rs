@@ -42,7 +42,7 @@ pub fn auth_router() -> OpenApiRouter<AppState> {
         (status = CREATED)
     )
 )]
-pub async fn register_user(
+async fn register_user(
     State(user_service): State<Arc<UserService>>,
     Json(user_register_req): Json<UserRegistrationReq>,
 ) -> Result<StatusCode, InternalError> {
@@ -64,7 +64,7 @@ pub async fn register_user(
         (status = OK, body=AuthToken)
     )
 )]
-pub async fn auth_user(
+async fn auth_user(
     State(user_service): State<Arc<UserService>>,
     jar: CookieJar,
     Json(user_info): Json<UserAuthReq>,
@@ -94,7 +94,7 @@ pub async fn auth_user(
         (status = OK, body=AuthToken)
     )
 )]
-pub async fn refresh_access_token(
+async fn refresh_access_token(
     State(user_service): State<Arc<UserService>>,
     refresh_claims: RefreshClaims,
 ) -> Result<Json<AuthToken>, InternalError> {
@@ -122,7 +122,7 @@ pub async fn refresh_access_token(
         ("api_key" = [])
     )
 )]
-pub async fn logout(
+async fn logout(
     State(user_service): State<Arc<UserService>>,
     jar: CookieJar,
     access_claims: RoleClaims<AnyUser>,

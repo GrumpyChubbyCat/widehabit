@@ -64,7 +64,7 @@ impl HabitService {
         })
     }
 
-    pub async fn add_new(
+    pub async fn create(
         &self,
         habit_data: NewHabitReq,
         user_id: Uuid,

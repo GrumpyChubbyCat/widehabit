@@ -5,6 +5,7 @@ pub mod auth;
 pub mod habit;
 pub mod schedule;
 pub mod user;
+pub mod log;
 
 #[derive(ToSchema, Serialize)]
 pub struct PagedResponse<T> {

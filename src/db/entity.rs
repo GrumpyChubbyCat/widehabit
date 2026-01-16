@@ -1,5 +1,5 @@
-use crate::db::schema::{habit_schedules, habits, users};
-use chrono::{DateTime, NaiveTime, Utc};
+use crate::db::schema::{habit_logs, habit_schedules, habits, users};
+use chrono::{DateTime, NaiveDate, NaiveTime, Utc};
 use diesel::{HasQuery, Insertable};
 use uuid::Uuid;
 
@@ -71,4 +71,29 @@ pub struct NewHabitSchedule {
     pub day_of_week: i16,
     pub start_time: NaiveTime,
     pub end_time: NaiveTime,
+}
+
+#[derive(HasQuery, Debug)]
+#[diesel(table_name = habit_logs)]
+pub struct HabitLog {
+    pub habit_log_id: Uuid,
+    pub habit_id: Uuid,
+    pub habit_schedule_id: Option<Uuid>,
+    pub log_date: NaiveDate,
+    pub actual_start: Option<DateTime<Utc>>,
+    pub actual_end: Option<DateTime<Utc>>,
+    pub comment: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Insertable)]
+#[diesel(table_name = habit_logs)]
+pub struct NewHabitLog<'a> {
+    pub habit_id: Uuid,
+    pub habit_schedule_id: Option<Uuid>,
+    pub log_date: NaiveDate,
+    pub actual_start: Option<DateTime<Utc>>,
+    pub actual_end: Option<DateTime<Utc>>,
+    pub comment: Option<&'a str>,
 }

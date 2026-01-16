@@ -41,7 +41,7 @@ pub fn schedule_router() -> OpenApiRouter<AppState> {
         ("api_key" = [])
     )
 )]
-pub async fn get_schedule(
+async fn get_schedule(
     State(schedule_service): State<Arc<HabitScheduleService>>,
     access_claims: RoleClaims<AnyUser>,
     Path(habit_id): Path<Uuid>,
@@ -67,7 +67,7 @@ pub async fn get_schedule(
         ("api_key" = [])
     )
 )]
-pub async fn set_schedule(
+async fn set_schedule(
     State(schedule_service): State<Arc<HabitScheduleService>>,
     access_claims: RoleClaims<AnyUser>,
     Json(set_shcedule_req): Json<SetScheduleReq>,

@@ -47,6 +47,9 @@ pub enum InternalError {
     #[error("Validation failed")]
     Validation(String),
 
+    #[error("Bad request")]
+    BadRequest(String),
+
     #[error("Not found")]
     NotFound,
 
