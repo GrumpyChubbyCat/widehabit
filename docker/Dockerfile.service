@@ -2,8 +2,7 @@ FROM rust:1.92-slim-bookworm as builder
 
 WORKDIR widehabit/
 
-RUN --mount=type=cache,target=/var/cache/apt \
-    apt update && apt install -y \
+RUN apt update && apt install -y \
         apt-utils \
         curl \
         musl-dev \

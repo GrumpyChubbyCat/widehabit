@@ -77,8 +77,8 @@ pub fn api_router(db_pool: DbPool, auth_config: AuthConfig) -> Router {
 
     let (router, _api) = OpenApiRouter::with_openapi(WideApiDoc::openapi())
         .nest(API_PREFIX, api_routes)
-        .route("/metrics", get(|| async move { metric_handle.render() }))
         .layer(trace_layer)
+        .route("/metrics", get(|| async move { metric_handle.render() }))
         .layer(prometheus_layer)
         .with_state(app_state)
         .split_for_parts();

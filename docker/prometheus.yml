@@ -1,0 +1,4 @@
+scrape_configs:
+  - job_name: 'widehabit'
+    static_configs:
+      - targets: ['widehabit-service:9091']
