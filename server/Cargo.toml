@@ -19,7 +19,7 @@ tokio = { version = "1.49.0", features = ["full"] }
 # Tracing and logging
 tower-http = { version = "0.6.8", features = ["trace"] }
 tracing = "0.1.44"
-tracing-subscriber = "0.3.22"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter", "json", "time"]}
 
 # Serialization
 serde = { version = "1.0.228", features = ["derive"] }
@@ -43,6 +43,7 @@ chrono = { version = "0.4.42", features = ["serde"] }
 axum-extra = { version = "0.12.5", features = ["cookie", "typed-header"] }
 time = "0.3.44"
 validator = { version = "0.20.0", features = ["derive"] }
+axum-prometheus = "0.10.0"
 
 
 [profile.release]

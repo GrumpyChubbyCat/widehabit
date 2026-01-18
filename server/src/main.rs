@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use tracing::Level;
-use tracing_subscriber::FmtSubscriber;
+use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 use widehabit_server::{config::WideConfig, errors::StartError, run};
 
 #[tokio::main]
@@ -15,14 +15,27 @@ async fn main() -> Result<(), StartError> {
 
     // Setup log level for tracing
     let log_level = Level::from_str(&config.log_level)?;
+    let filter_layer = EnvFilter::from(log_level.as_str());
 
-    //Setting up our tracing subscriber
-    let subscriber = FmtSubscriber::builder()
-        .with_max_level(log_level)
-        .compact()
-        .finish();
+    let registry = tracing_subscriber::registry().with(filter_layer);
 
-    tracing::subscriber::set_global_default(subscriber).expect("Setting default subscriber failed");
+    #[cfg(debug_assertions)]
+    {
+        registry.with(fmt::layer().compact()).init();
+        tracing::info!("Tracing initialized in COMPACT mode (debug)");
+    }
+
+    #[cfg(not(debug_assertions))]
+    {
+        registry
+            .with(
+                fmt::layer()
+                    .json()
+                    .with_timer(fmt::time::ChronoUtc::rfc_3339())
+                    .with_current_span(true),
+            )
+            .init();
+    }
 
     // Running the widehobby server application
     run(config).await

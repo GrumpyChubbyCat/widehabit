@@ -6,7 +6,7 @@ pub mod log;
 
 use std::time::Duration;
 
-use axum::{Router, body::Body, extract::Request, response::Response};
+use axum::{Router, body::Body, extract::Request, response::Response, routing::get};
 use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
 use tracing::Span;
 use utoipa::OpenApi;
@@ -14,6 +14,7 @@ use utoipa_axum::router::OpenApiRouter;
 
 #[cfg(debug_assertions)]
 use utoipa_swagger_ui::SwaggerUi;
+use axum_prometheus::PrometheusMetricLayer;
 
 use crate::{
     api::{
@@ -65,17 +66,20 @@ pub fn api_router(db_pool: DbPool, auth_config: AuthConfig) -> Router {
     let log_service = HabitLogService::new(log_repo);
 
     let app_state = AppState::new(auth_config, user_service, habit_service, schedule_service, log_service);
+    let (prometheus_layer, metric_handle) = PrometheusMetricLayer::pair();
 
     let api_routes = OpenApiRouter::new()
         .nest("/health", health_router())
         .nest("/auth", auth_router())
         .nest("/habit", habit_router())
-        .nest("/shcedule", schedule_router())
+        .nest("/schedule", schedule_router())
         .nest("/log", log_router());
 
     let (router, _api) = OpenApiRouter::with_openapi(WideApiDoc::openapi())
         .nest(API_PREFIX, api_routes)
+        .route("/metrics", get(|| async move { metric_handle.render() }))
         .layer(trace_layer)
+        .layer(prometheus_layer)
         .with_state(app_state)
         .split_for_parts();
 

@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-
+  # --- Database ---
   postgres: 
     image: postgres:18.1-alpine3.23
     env_file: .env
@@ -35,7 +35,7 @@ services:
     stdin_open: true
     networks:
       - wide
-
+  # --- Application and migrations
   widehabit-migrations:
     build:
       context: .
