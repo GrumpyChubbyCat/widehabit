@@ -6,14 +6,14 @@ use chrono::{Duration, Utc};
 use jsonwebtoken::{EncodingKey, Header, encode};
 use uuid::Uuid;
 
+use shared::model::{
+    user::{UserAuthReq, UserRegistrationReq, UserRole, UserRoleData},
+};
+
 use crate::{
     config::AuthConfig,
     db::{entity::NewUser, repo::user::UserRepository},
-    errors::InternalError,
-    model::{
-        auth::{AccessClaims, RefreshClaims},
-        user::{UserAuthReq, UserRegistrationReq, UserRole, UserRoleData},
-    },
+    errors::InternalError, model::auth::{AccessClaims, RefreshClaims},
 };
 
 pub struct UserService {
@@ -38,7 +38,7 @@ impl UserService {
         let new_user = NewUser {
             username: &user_data.username,
             email: &user_data.email,
-            password_hash: &password_hash
+            password_hash: &password_hash,
         };
 
         self.user_repo.create(new_user).await

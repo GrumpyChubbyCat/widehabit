@@ -9,16 +9,17 @@ use axum::{
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
+use shared::model::{
+        PagedResponse, PaginationParams,
+        habit::{HabitData, NewHabitReq, UpdateHabitRes},
+};
+
 use crate::{
     api::{
         extractors::{AnyUser, RoleClaims},
         state::AppState,
     },
     errors::InternalError,
-    model::{
-        PagedResponse, PaginationParams,
-        habit::{HabitData, NewHabitReq, UpdateHabitRes},
-    },
     service::habit::HabitService,
 };
 

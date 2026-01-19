@@ -1,6 +1,24 @@
 [workspace]
 members = [
     "server",
-    "frontend",
+    "frontend", 
+    "shared",
 ]
 resolver = "2"
+
+[workspace.dependencies]
+# OpenAPI documentation
+utoipa = { version = "5.4.0", features = ["uuid", "axum_extras", "chrono"] }
+
+# Serialization
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.148"
+serde-aux = "4.7.0"
+
+# Common utility crates
+time = "0.3.44"
+uuid = { version = "1.19.0", features = ["serde", "v4", "fast-rng"] }
+chrono = { version = "0.4.42", features = ["serde"] }
+thiserror = "2.0.17"
+validator = { version = "0.20.0", features = ["derive"] }
+jsonwebtoken = { version = "10", features = ["aws_lc_rs"] }

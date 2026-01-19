@@ -22,12 +22,13 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter", "json", "chrono"]}
 
 # Serialization
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.148"
-serde-aux = "4.7.0"
+serde.workspace = true
+serde_json.workspace = true
+serde-aux.workspace = true
+shared = { path = "../shared"}
 
 # OpenAPI documentation
-utoipa = { version = "5.4.0", features = ["uuid", "axum_extras", "chrono"] }
+utoipa.workspace = true
 utoipa-axum = "0.2.0"
 utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
 
@@ -36,14 +37,14 @@ config = { version = "0.15.19", default-features = false }
 dotenv = "0.15.0"
 argon2 = { version = "0.5.3", features = ["std"] }
 rand = "0.9.2"
-thiserror = "2.0.17"
-uuid = { version = "1.19.0", features = ["serde", "v4", "fast-rng"] }
-jsonwebtoken = { version = "10", features = ["aws_lc_rs"] }
-chrono = { version = "0.4.42", features = ["serde"] }
-axum-extra = { version = "0.12.5", features = ["cookie", "typed-header"] }
-time = "0.3.44"
-validator = { version = "0.20.0", features = ["derive"] }
 axum-prometheus = "0.10.0"
+axum-extra = { version = "0.12.5", features = ["cookie", "typed-header"] }
+thiserror.workspace = true
+uuid.workspace = true
+jsonwebtoken.workspace = true
+chrono.workspace = true
+time.workspace = true
+validator.workspace = true
 
 
 [profile.release]

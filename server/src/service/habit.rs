@@ -1,12 +1,13 @@
 use uuid::Uuid;
 
+use shared::model::{
+    PagedResponse,
+    habit::{HabitData, HabitStatus, NewHabitReq},
+};
+
 use crate::{
     db::{entity::NewHabit, repo::habit::HabitRepository},
     errors::InternalError,
-    model::{
-        PagedResponse,
-        habit::{HabitData, HabitStatus, NewHabitReq},
-    },
 };
 
 pub struct HabitService {
@@ -80,7 +81,7 @@ impl HabitService {
             habit_id: created_habit.habit_id,
             name: created_habit.title,
             description: created_habit.about,
-            status: HabitStatus::from(created_habit.habit_status_id)
+            status: HabitStatus::from(created_habit.habit_status_id),
         };
 
         Ok(habit_data)

@@ -1,13 +1,14 @@
 use chrono::Utc;
 use uuid::Uuid;
 
+use shared::model::{
+    PagedResponse,
+    log::{HabitLogData, NewHabitLogReq},
+};
+
 use crate::{
     db::{entity::NewHabitLog, repo::log::HabitLogRepository},
     errors::InternalError,
-    model::{
-        PagedResponse,
-        log::{HabitLogData, NewHabitLogReq},
-    },
 };
 
 pub struct HabitLogService {
@@ -31,19 +32,19 @@ impl HabitLogService {
             .find_paged(habit_id, user_id, page, page_size)
             .await?;
 
-        let habit_logs_data =
-            counted_habit_logs
-                .entities
-                .into_iter()
-                .map(|habit_log| HabitLogData {
-                    habit_log_id: habit_log.habit_log_id,
-                    habit_id: habit_log.habit_id,
-                    habit_schedule_id: habit_log.habit_schedule_id,
-                    log_date: habit_log.log_date,
-                    actual_start: habit_log.actual_start,
-                    actual_end: habit_log.actual_end,
-                    comment: habit_log.comment,
-                }).collect();
+        let habit_logs_data = counted_habit_logs
+            .entities
+            .into_iter()
+            .map(|habit_log| HabitLogData {
+                habit_log_id: habit_log.habit_log_id,
+                habit_id: habit_log.habit_id,
+                habit_schedule_id: habit_log.habit_schedule_id,
+                log_date: habit_log.log_date,
+                actual_start: habit_log.actual_start,
+                actual_end: habit_log.actual_end,
+                comment: habit_log.comment,
+            })
+            .collect();
 
         Ok(PagedResponse::<HabitLogData> {
             items: habit_logs_data,

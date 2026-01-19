@@ -9,17 +9,15 @@ use time::Duration as TimeDuration;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use validator::Validate;
 
+use shared:: model::{
+    auth::AuthToken, user::{UserAuthReq, UserRegistrationReq, UserRole}
+};
+
 use crate::{
     api::{
         extractors::{AnyUser, RoleClaims},
         router::AppState,
-    },
-    errors::InternalError,
-    model::{
-        auth::{AuthToken, RefreshClaims},
-        user::{UserAuthReq, UserRegistrationReq, UserRole},
-    },
-    service::user::UserService,
+    }, errors::InternalError, model::auth::RefreshClaims, service::user::UserService
 };
 
 const COOKIE_LIFETIME: i64 = 30;

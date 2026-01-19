@@ -1,0 +1,19 @@
+[package]
+name = "shared"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# OpenAPI documentation
+utoipa.workspace = true
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+serde-aux.workspace = true
+
+# Common utility crates
+time.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+validator.workspace = true

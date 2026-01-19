@@ -1,12 +1,13 @@
 use uuid::Uuid;
 
+use shared::model::{
+    DayOfWeek,
+    schedule::{ScheduleItemReq, ScheduleItemRes},
+};
+
 use crate::{
     db::{entity::NewHabitSchedule, repo::schedule::HabitScheduleRepository},
     errors::InternalError,
-    model::{
-        DayOfWeek,
-        schedule::{ScheduleItemReq, ScheduleItemRes},
-    },
 };
 
 pub struct HabitScheduleService {

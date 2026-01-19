@@ -1,11 +1,8 @@
-use crate::{
-    api::errors::AuthError,
-    config::AuthConfig,
-    model::{
-        auth::{AccessClaims, RefreshClaims},
-        user::UserRole,
-    },
+use shared::model::{
+    user::UserRole,
 };
+
+use crate::{api::errors::AuthError, config::AuthConfig, model::auth::{AccessClaims, RefreshClaims}};
 use axum::{
     RequestPartsExt,
     extract::{FromRef, FromRequestParts},

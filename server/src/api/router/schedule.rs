@@ -8,13 +8,14 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 use validator::Validate;
 
+use shared::model::schedule::{ScheduleRes, SetScheduleReq};
+
 use crate::{
     api::{
         extractors::{AnyUser, RoleClaims},
         state::AppState,
     },
     errors::InternalError,
-    model::schedule::{ScheduleRes, SetScheduleReq},
     service::schedule::HabitScheduleService,
 };
 
