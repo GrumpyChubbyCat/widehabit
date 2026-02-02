@@ -1,3 +1,4 @@
+use frontend::compontents::{AuthButton, MainInput};
 use leptos::prelude::*;
 use leptos::{
     IntoView, component,
@@ -6,6 +7,13 @@ use leptos::{
 
 #[component]
 fn LoginPage() -> impl IntoView {
+    let (username, set_username) = signal(String::new());
+    let (password, set_password) = signal(String::new());
+    let (is_loading, _set_is_loading) = signal(false);
+    let (has_error, _set_has_error) = signal(false);
+
+    let on_sign_in = move |_| {};
+
     view! {
         <div class="auth-wrapper">
             <div class="auth-card">
@@ -13,21 +21,31 @@ fn LoginPage() -> impl IntoView {
 
                 <div class="input-section">
                     // Login block
-                    <div class="input-group">
-                        <input type="text" placeholder="username" id="login-input" />
-                        <label class="input-label" for="login-input">"login"</label>
-                    </div>
-                
+                    <MainInput
+                        label="login"
+                        placeholder="username"
+                        input_type="text"
+                        value=username
+                        set_value=set_username
+                        has_error=has_error.into()
+                    />
                     // Password block
-                    <div class="input-group">
-                        <input type="password" placeholder="*********" id="password-input" />
-                        <label class="input-label" for="password-input">"password"</label>
-                    </div>
+                     <MainInput
+                        label="password"
+                        placeholder="*********"
+                        input_type="password"
+                        value=password
+                        set_value=set_password
+                        has_error=has_error.into()
+                    />
                 </div>
 
-                <button class="sign-in-button">
-                    "Sign in"
-                </button>
+                <AuthButton
+                    text="Sign in"
+                    loading_text="Wait..."
+                    is_loading=is_loading.into()
+                    on_click=Callback::new(on_sign_in)
+                />
             </div>
         </div>
     }
