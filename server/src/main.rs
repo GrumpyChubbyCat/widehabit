@@ -19,14 +19,7 @@ async fn main() -> Result<(), StartError> {
 
     let registry = tracing_subscriber::registry().with(filter_layer);
 
-    #[cfg(debug_assertions)]
-    {
-        registry.with(fmt::layer().compact()).init();
-        tracing::info!("Tracing initialized in COMPACT mode (debug)");
-    }
-
-    #[cfg(not(debug_assertions))]
-    {
+    if config.json_log {
         registry
             .with(
                 fmt::layer()
@@ -35,6 +28,9 @@ async fn main() -> Result<(), StartError> {
                     .with_current_span(true),
             )
             .init();
+    } else {
+        registry.with(fmt::layer().compact()).init();
+        tracing::info!("Tracing initialized in COMPACT mode (debug)");
     }
 
     // Running the widehobby server application

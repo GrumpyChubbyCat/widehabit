@@ -25,6 +25,8 @@ pub struct WideConfig {
     pub listen_port: u16,
     #[serde(default = "default_log_level")]
     pub log_level: String,
+    #[serde(default = "default_json_log")]
+    pub json_log: bool,
     #[serde(default = "default_db")]
     pub database_url: String,
     #[serde(default = "default_db_pool")]
@@ -62,6 +64,10 @@ fn default_db_pool() -> u32 {
 
 fn default_log_level() -> String {
     String::from("DEBUG")
+}
+
+fn default_json_log() -> bool {
+    false
 }
 
 fn default_jwt_secret() -> String {

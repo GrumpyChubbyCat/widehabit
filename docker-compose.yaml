@@ -67,6 +67,7 @@ services:
 
   # --- Monitoring ---
   prometheus:
+    profiles: ["monitoring"]
     image: prom/prometheus:v3.1.0
     container_name: prometheus
     volumes:
@@ -78,6 +79,7 @@ services:
     restart: unless-stopped
 
   loki:
+    profiles: ["monitoring"]
     image: grafana/loki:3.3.2
     container_name: loki
     ports:
@@ -88,6 +90,7 @@ services:
     restart: unless-stopped
   
   promtail:
+    profiles: ["monitoring"]
     image: grafana/promtail:3.3.2
     container_name: promtail
     volumes:
@@ -99,6 +102,7 @@ services:
     restart: unless-stopped
 
   grafana:
+    profiles: ["monitoring"]
     image: grafana/grafana:11.5.1
     container_name: grafana
     ports:
