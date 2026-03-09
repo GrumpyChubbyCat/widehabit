@@ -17,7 +17,7 @@ serde-aux = "4.7.0"
 
 # Common utility crates
 time = "0.3.44"
-uuid = { version = "1.19.0", features = ["serde", "v4", "fast-rng"] }
+uuid = { version = "1.19.0", features = ["serde", "v4", "fast-rng", "js"] }
 chrono = { version = "0.4.42", features = ["serde"] }
 thiserror = "2.0.17"
 validator = { version = "0.20.0", features = ["derive"] }

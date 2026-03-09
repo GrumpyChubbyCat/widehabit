@@ -4,7 +4,16 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# Core dependencies
+gloo-net = "0.6.0"
 leptos = { version = "0.8.15", features = ["csr"] }
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+serde-aux.workspace = true
+shared = { path = "../shared"}
+web-sys = {version = "0.3.91", features = ["Storage"]}
 
 [profile.release]
 codegen-units = 1
