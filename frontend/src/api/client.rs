@@ -1,5 +1,6 @@
 use gloo_net::http::{Request, Response};
 use leptos::prelude::*;
+use serde::Serialize;
 use shared::model::auth::AuthToken;
 use web_sys::window;
 
@@ -8,9 +9,18 @@ pub struct AuthFlowClient {
     base_url: String,
     token: RwSignal<Option<String>>,
 }
+
 // TODO: Implement CBOR support
 impl AuthFlowClient {
-    pub fn new(base_url: String) -> Self {
+    pub fn new() -> Self {
+        // Get the origin (protocol + host + port)
+        let origin = window()
+            .map(|w| w.location().origin().unwrap_or_default())
+            .unwrap_or_else(|| "http://localhost:8080".to_string());
+
+        // Build the base URL with versioning
+        let base_url = format!("{}/api/v1", origin);
+
         let token = window()
             .and_then(|w| w.local_storage().ok().flatten())
             .and_then(|ls| ls.get_item("wh_auth_token").ok().flatten());
@@ -21,6 +31,54 @@ impl AuthFlowClient {
         }
     }
 
+    // Auth methods
+    pub async fn register<Req>(&self, path: &str, body: &Req) -> Result<(), String>
+    where
+        Req: Serialize,
+    {
+        let url = format!("{}{}", self.base_url, path);
+
+        let resp = Request::post(&url)
+            .json(body)
+            .map_err(|e| e.to_string())?
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        if !resp.ok() {
+            return Err(format!("Registration failed: {}", resp.status()));
+        }
+
+        Ok(())
+    }
+
+    /// Public: Login - returns access token and sets it in the client
+    pub async fn login<Req>(&self, path: &str, body: &Req) -> Result<(), String>
+    where
+        Req: Serialize,
+    {
+        let url = format!("{}{}", self.base_url, path);
+
+        let resp = Request::post(&url)
+            .json(body)
+            .map_err(|e| e.to_string())?
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        if !resp.ok() {
+            return Err(format!("Login failed: {}", resp.status()));
+        }
+
+        let data: AuthToken = resp.json().await.map_err(|e| e.to_string())?;
+
+        // Save token and update state
+        self.update_token_state(Some(data.access_token));
+
+        Ok(())
+    }
+
+    // Authorized crud operations
     async fn execute<F>(&self, build_fn: F) -> Result<Response, String>
     where
         F: Fn() -> Result<Request, gloo_net::Error>,
@@ -47,45 +105,6 @@ impl AuthFlowClient {
             }
 
             return Ok(resp);
-        }
-    }
-
-    pub async fn refresh_token(&self) -> Result<(), ()> {
-        let url = format!("{}/auth/refresh", self.base_url);
-
-        // We use a raw Request here instead of self.post to avoid infinite recursion in 'execute'.
-        // The browser will automatically include the HttpOnly 'refresh_token' cookie.
-        let resp = Request::post(&url)
-            .send()
-            .await
-            .map_err(|_| ())?;
-
-        if resp.ok() {
-            // Backend returns AuthToken { access_token: String }
-            let auth_token: AuthToken = resp.json().await.map_err(|_| ())?;
-            let new_token = auth_token.access_token;
-
-            // 1. Update the reactive signal (notifies all Leptos components)
-            self.token.set(Some(new_token.clone()));
-
-            // 2. Persist the new access token in LocalStorage for future sessions
-            if let Some(ls) = window().and_then(|w| w.local_storage().ok().flatten()) {
-                let _ = ls.set_item("wh_auth_token", &new_token);
-            }
-
-            Ok(())
-        } else {
-            // If refresh fails (e.g., cookie expired or revoked), clear the session
-            self.logout();
-            Err(())
-        }
-    }
-
-    /// Clears the authentication state and removes the token from local storage
-    pub fn logout(&self) {
-        self.token.set(None);
-        if let Some(ls) = window().and_then(|w| w.local_storage().ok().flatten()) {
-            let _ = ls.remove_item("wh_auth_token");
         }
     }
 
@@ -130,5 +149,42 @@ impl AuthFlowClient {
         }
 
         resp.json::<Res>().await.map_err(|e| e.to_string())
+    }
+
+    // Helper methods
+    pub async fn refresh_token(&self) -> Result<(), ()> {
+        let url = format!("{}/auth/refresh", self.base_url);
+
+        // We use a raw Request here instead of self.post to avoid infinite recursion in 'execute'.
+        // The browser will automatically include the HttpOnly 'refresh_token' cookie.
+        let resp = Request::post(&url).send().await.map_err(|_| ())?;
+
+        if resp.ok() {
+            let data: AuthToken = resp.json().await.map_err(|_| ())?;
+            self.update_token_state(Some(data.access_token));
+            Ok(())
+        } else {
+            self.logout();
+            Err(())
+        }
+    }
+
+    // Clears the authentication state and removes the token from local storage
+    pub fn logout(&self) {
+        self.update_token_state(None);
+    }
+
+    fn update_token_state(&self, token: Option<String>) {
+        self.token.set(token.clone());
+        if let Some(ls) = window().and_then(|w| w.local_storage().ok().flatten()) {
+            match token {
+                Some(t) => {
+                    let _ = ls.set_item("wh_auth_token", &t);
+                }
+                None => {
+                    let _ = ls.remove_item("wh_auth_token");
+                }
+            }
+        }
     }
 }

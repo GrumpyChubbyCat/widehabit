@@ -1,0 +1,7 @@
+[serve]
+rewrite_action = "rewrite"
+rewrite_to = "index.html"
+
+[[proxy]]
+rewrite = "/api/v1"
+backend = "http://127.0.0.1:9091/api/v1"

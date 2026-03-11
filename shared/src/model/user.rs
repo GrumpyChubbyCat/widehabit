@@ -3,7 +3,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-#[derive(ToSchema, Deserialize)]
+#[derive(ToSchema, Serialize, Deserialize)]
 pub struct UserAuthReq {
     pub username: String,
     pub password: String,

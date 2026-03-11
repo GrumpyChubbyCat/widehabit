@@ -1,56 +1,26 @@
-use frontend::compontents::{AuthButton, MainInput};
+use frontend::api::client::AuthFlowClient;
+use frontend::pages::LoginPage;
+use leptos::{IntoView, component, view};
 use leptos::prelude::*;
-use leptos::{
-    IntoView, component,
-    view,
-};
+use leptos_router::{components::*, path};
 
 #[component]
-fn LoginPage() -> impl IntoView {
-    let (username, set_username) = signal(String::new());
-    let (password, set_password) = signal(String::new());
-    let (is_loading, _set_is_loading) = signal(false);
-    let (has_error, _set_has_error) = signal(false);
+fn WideApp() -> impl IntoView {
+    let auth_client = AuthFlowClient::new();
 
-    let on_sign_in = move |_| {};
+    provide_context(auth_client);
 
     view! {
-        <div class="auth-wrapper">
-            <div class="auth-card">
-                <h2 class="auth-title">"Hello."</h2>
-
-                <div class="input-section">
-                    // Login block
-                    <MainInput
-                        label="login"
-                        placeholder="username"
-                        input_type="text"
-                        value=username
-                        set_value=set_username
-                        has_error=has_error.into()
-                    />
-                    // Password block
-                     <MainInput
-                        label="password"
-                        placeholder="*********"
-                        input_type="password"
-                        value=password
-                        set_value=set_password
-                        has_error=has_error.into()
-                    />
-                </div>
-
-                <AuthButton
-                    text="Sign in"
-                    loading_text="Wait..."
-                    is_loading=is_loading.into()
-                    on_click=Callback::new(on_sign_in)
-                />
-            </div>
-        </div>
+        <Router>
+            <main>
+                <Routes fallback=|| view! { "Page now found." }>
+                    <Route path=path!("/") view=LoginPage />
+                </Routes>
+            </main>
+        </Router>
     }
 }
 
 fn main() {
-    leptos::mount::mount_to_body(LoginPage);
+    leptos::mount::mount_to_body(WideApp);
 }
