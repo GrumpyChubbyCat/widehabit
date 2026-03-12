@@ -66,6 +66,8 @@ pub fn LoginPage() -> impl IntoView {
                     />
                 </div>
 
+                {move || has_error.get().then(|| view! { <div class="error-message">"Invalid username or password"</div> })}
+
                 <AuthButton
                     text="Sign in"
                     loading_text="Wait..."

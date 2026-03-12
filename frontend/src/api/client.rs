@@ -31,6 +31,10 @@ impl AuthFlowClient {
         }
     }
 
+    pub fn is_authenticated(&self) -> bool {
+        self.token.get().is_some()
+    }
+
     // Auth methods
     pub async fn register<Req>(&self, path: &str, body: &Req) -> Result<(), String>
     where

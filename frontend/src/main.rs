@@ -1,5 +1,5 @@
 use frontend::api::client::AuthFlowClient;
-use frontend::pages::HabitsPage;
+use frontend::pages::{HabitsPage, LoginPage};
 use leptos::{IntoView, component, view};
 use leptos::prelude::*;
 use leptos_router::{components::*, path};
@@ -8,13 +8,19 @@ use leptos_router::{components::*, path};
 fn WideApp() -> impl IntoView {
     let auth_client = AuthFlowClient::new();
 
-    provide_context(auth_client);
+    provide_context(auth_client.clone());
 
     view! {
         <Router>
             <main>
-                <Routes fallback=|| view! { "Page now found." }>
-                    <Route path=path!("/") view=HabitsPage />
+                <Routes fallback=|| view! { "Page not found." }>
+                    <Route path=path!("/login") view=LoginPage />
+                    <ProtectedRoute 
+                        path=path!("/") 
+                        condition=move || Some(auth_client.is_authenticated()) 
+                        redirect_path=|| "/login" 
+                        view=HabitsPage 
+                    />
                 </Routes>
             </main>
         </Router>
