@@ -56,8 +56,25 @@ pub fn IconSettings() -> impl IntoView {
 }
 
 #[component]
+pub fn HabitItem(
+    #[prop(into)] title: String,
+    #[prop(into)] description: String,
+    #[prop(into)] color_index: usize,
+) -> impl IntoView {
+    let bg_class = format!("habit-bg-{}", color_index % 5);
+    
+    view! {
+        <div class=format!("habit-item {}", bg_class)>
+            <h3 class="habit-item-title">{title}</h3>
+            <p class="habit-item-desc">{description}</p>
+        </div>
+    }
+}
+
+#[component]
 pub fn NewHabitModal(
     set_show_modal: WriteSignal<bool>,
+    set_refresh_trigger: WriteSignal<()>,
 ) -> impl IntoView {
     let (new_habit_name, set_new_habit_name) = signal(String::new());
     let (new_habit_desc, set_new_habit_desc) = signal(String::new());
@@ -79,9 +96,10 @@ pub fn NewHabitModal(
                 description: if desc.is_empty() { None } else { Some(desc) },
             };
 
-            match auth.post::<_, shared::model::habit::HabitData>("/habit/", &req).await {
+            match auth.post::<_, shared::model::habit::HabitData>("/habit", &req).await {
                 Ok(_) => {
                     set_show_modal.set(false);
+                    set_refresh_trigger.set(());
                 }
                 Err(e) => {
                     leptos::logging::error!("Create habit error: {}", e);

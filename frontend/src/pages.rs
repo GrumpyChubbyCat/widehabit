@@ -85,12 +85,30 @@ pub fn HabitsPage() -> impl IntoView {
     let times = vec!["06:00", "10:00", "14:00", "18:00", "20:00", "00:00"];
 
     let (show_modal, set_show_modal) = signal(false);
+    let (refresh_trigger, set_refresh_trigger) = signal(());
+
+    let auth = use_context::<AuthFlowClient>().expect("AuthFlowClient should be provided in context");
+
+    let habits = LocalResource::new(move || {
+        let auth = auth.clone();
+        refresh_trigger.get();
+        async move {
+            let res: Result<shared::model::PagedResponse<shared::model::habit::HabitData>, String> =
+                auth.get("/habit?page=1&limit=7").await;
+            res.unwrap_or_else(|_| shared::model::PagedResponse {
+                items: vec![],
+                total_count: 0,
+                page: 1,
+                page_size: 100,
+            })
+        }
+    });
 
     view! {
         <div class="habits-container">
             {move || if show_modal.get() {
                 Some(view! {
-                    <NewHabitModal set_show_modal=set_show_modal />
+                    <NewHabitModal set_show_modal=set_show_modal set_refresh_trigger=set_refresh_trigger />
                 })
             } else {
                 None
@@ -105,12 +123,39 @@ pub fn HabitsPage() -> impl IntoView {
                 </button>
             </nav>
 
-            // Sidebar
+            // Habits-list
             <aside class="habits-sidebar">
-                <h1 class="auth-title">"My Habits"</h1> // Reusing the header class
-                <div class="habits-empty-state">
-                    "You have no habits yet"
-                </div>
+                <h1 class="habits-title">"My Habits"</h1>
+                <Suspense fallback=move || view! { <div class="habits-empty-state">"Loading..."</div> }>
+                    {move || {
+                        let data = habits.get();
+                        if let Some(resp) = data {
+                            if resp.items.is_empty() {
+                                view! {
+                                    <div class="habits-empty-state">
+                                        "You have no habits yet"
+                                    </div>
+                                }.into_any()
+                            } else {
+                                view! {
+                                    <div class="habits-list">
+                                        {resp.items.into_iter().enumerate().map(|(i, habit)| {
+                                            view! {
+                                                <crate::compontents::HabitItem
+                                                    title=habit.name
+                                                    description=habit.description.unwrap_or_default()
+                                                    color_index=i
+                                                />
+                                            }
+                                        }).collect_view()}
+                                    </div>
+                                }.into_any()
+                            }
+                        } else {
+                            view! { <div class="habits-empty-state">"Loading..."</div> }.into_any()
+                        }
+                    }}
+                </Suspense>
             </aside>
 
             // Main grid

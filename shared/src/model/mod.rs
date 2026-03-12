@@ -7,7 +7,7 @@ pub mod schedule;
 pub mod user;
 pub mod log;
 
-#[derive(ToSchema, Serialize)]
+#[derive(ToSchema, Serialize, Deserialize, Clone)]
 pub struct PagedResponse<T> {
     pub items: Vec<T>,
     pub total_count: i64,

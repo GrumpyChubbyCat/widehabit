@@ -1,0 +1,38 @@
+.habit-item {
+  border-radius: 15px;
+  padding: 15px;
+  margin-bottom: 27px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  box-shadow: var(--panel-shadow)
+}
+
+.habit-item-title {
+  font-family: var(--main-font);
+  font-size: 28px;
+  font-weight: 400;
+  opacity: 0.75;
+  margin: 0;
+  color: var(--text-main);
+}
+
+.habit-item-desc {
+  font-family: var(--main-font);
+  font-size: 18px;
+  font-weight: 400;
+  opacity: 0.75;
+  margin: 0;
+  color: var(--habit-desc);
+}
+
+/* 
+  Reusable background color classes for habits.
+  These can also be used for calendar grid cells.
+*/
+.habit-bg-0 { background-color: #D0E2F5; }
+.habit-bg-1 { background-color: #CDE6D6; }
+.habit-bg-2 { background-color: #FFE691; }
+.habit-bg-3 { background-color: #E3DEE8; }
+.habit-bg-4 { background-color: #ECC6BA; }

@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-#[derive(ToSchema, Serialize, Deserialize)]
+#[derive(ToSchema, Serialize, Deserialize, Clone)]
 pub enum HabitStatus {
     Progress,
     Mastered,
@@ -19,7 +19,7 @@ impl From<i32> for HabitStatus {
     }
 }
 
-#[derive(ToSchema, Serialize, Deserialize)]
+#[derive(ToSchema, Serialize, Deserialize, Clone)]
 pub struct HabitData {
     pub habit_id: Uuid,
     pub name: String,
