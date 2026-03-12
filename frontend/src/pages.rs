@@ -1,5 +1,5 @@
 use crate::api::client::AuthFlowClient;
-use crate::compontents::{AuthButton, MainInput};
+use crate::compontents::{AuthButton, MainInput, IconPlus, IconSettings};
 use leptos::task::spawn_local;
 use leptos::{IntoView, component, view};
 use leptos::{logging, prelude::*};
@@ -73,6 +73,53 @@ pub fn LoginPage() -> impl IntoView {
                     on_click=Callback::new(on_sign_in)
                 />
             </div>
+        </div>
+    }
+}
+
+#[component]
+pub fn HabitsPage() -> impl IntoView {
+    let days = vec!["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+    let times = vec!["06:00", "10:00", "14:00", "18:00", "20:00", "00:00"];
+
+    view! {
+        <div class="habits-container">
+            // Left navigation rail
+            <nav class="nav-rail">
+                <button class="icon-btn">
+                    <IconPlus />
+                </button>
+                <button class="icon-btn">
+                    <IconSettings />
+                </button>
+            </nav>
+
+            // Sidebar
+            <aside class="habits-sidebar">
+                <h1 class="auth-title">"My Habits"</h1> // Reusing the header class
+                <div class="habits-empty-state">
+                    "You have no habits yet"
+                </div>
+            </aside>
+
+            // Main grid
+            <main class="calendar-view">
+                <div class="calendar-grid">
+                    // Day headers
+                    <div></div> // Spacer for the time column
+                    {days.into_iter().map(|day| view! {
+                        <div class="day-header">{day}</div>
+                    }).collect_view()}
+
+                    // Time rows and cells
+                    {times.into_iter().map(|time| view! {
+                        <div class="time-label">{time}</div>
+                        { (0..7).map(|_| view! {
+                            <div class="grid-cell"></div>
+                        }).collect_view() }
+                    }).collect_view()}
+                </div>
+            </main>
         </div>
     }
 }

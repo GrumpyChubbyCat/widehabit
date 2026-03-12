@@ -1,0 +1,72 @@
+/* Main layout container with padding to show the background */
+.habits-container {
+  display: flex;
+  height: 100vh;
+  padding: 20px;
+  gap: 20px;
+  background-color: var(--bg-color); /* */
+  box-sizing: border-box;
+}
+
+/* Navigation Rail (Left sidebar styled as a card) */
+.nav-rail {
+  width: 70px;
+  background: var(--card-bg); /* */
+  border-radius: 30px; /* */
+  box-shadow: var(--panel-shadow); /* */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30px 0;
+}
+
+/* Habits List Area (No card styling, just transparent background) */
+.habits-sidebar {
+  width: 340px;
+  padding: 30px 10px;
+  display: flex;
+  flex-direction: column;
+  background: transparent; /* No background as per the SVG mockup */
+}
+
+.icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-wrapper svg {
+  width: 32px;
+  height: 32px;
+  display: block;
+  /* If the icon is still invisible, hardcode the color for a second to test: */
+  /* stroke: black !important; */
+  stroke: currentColor; 
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-main);
+  padding: 12px; /* Add some hit area */
+  transition: color 0.2s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Empty state styling */
+.habits-empty-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted); /* */
+  text-align: center;
+  font-size: 24px;
+  line-height: 1.4;
+  font-weight: normal;
+  font-family: var(--main-font);
+}

@@ -41,3 +41,16 @@ pub fn AuthButton(
         </button>
     }
 }
+
+#[component]
+pub fn IconPlus() -> impl IntoView {
+    // Relative path to your Plus square.svg
+    let svg = include_str!("../public/assets/icons/plus.svg");
+    view! { <span class="icon-wrapper" inner_html=svg /> }
+}
+
+#[component]
+pub fn IconSettings() -> impl IntoView {
+    let svg = include_str!("../public/assets/icons/settings.svg");
+    view! { <span class="icon-wrapper" inner_html=svg /> }
+}

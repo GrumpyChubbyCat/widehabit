@@ -1,5 +1,5 @@
 use frontend::api::client::AuthFlowClient;
-use frontend::pages::LoginPage;
+use frontend::pages::HabitsPage;
 use leptos::{IntoView, component, view};
 use leptos::prelude::*;
 use leptos_router::{components::*, path};
@@ -14,7 +14,7 @@ fn WideApp() -> impl IntoView {
         <Router>
             <main>
                 <Routes fallback=|| view! { "Page now found." }>
-                    <Route path=path!("/") view=LoginPage />
+                    <Route path=path!("/") view=HabitsPage />
                 </Routes>
             </main>
         </Router>

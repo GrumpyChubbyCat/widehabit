@@ -1,0 +1,57 @@
+/* Calendar View (Right panel styled as a card) */
+.calendar-view {
+  flex: 1;
+  padding: 40px;
+  background: var(--card-bg); /* */
+  border-radius: 30px; /* */
+  box-shadow: var(--panel-shadow); /* */
+  overflow-y: auto;
+}
+
+/* Grid layout container */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: 80px repeat(7, 1fr);
+  gap: 0;
+}
+
+/* Day headers - keeping them clean */
+.day-header {
+  font-size: 32px;
+  font-weight: 400;
+  text-align: center;
+  padding-bottom: 40px;
+}
+
+/* Time labels column - no borders here! */
+.time-label {
+  font-size: 14px;
+  color: var(--text-muted);
+  padding-top: 10px;
+  text-align: center;
+  border: none; /* Explicitly remove any accidental borders */
+}
+
+/* Grid cell for habit blocks */
+.grid-cell {
+  border-top: 1px solid rgba(0,0,0,0.05);
+  border-left: 1px solid rgba(0,0,0,0.05);
+  height: 120px;
+  position: relative;
+}
+
+/* Close the grid on the far right */
+.grid-cell:nth-child(8n) {
+  border-right: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Close the grid on the bottom */
+/* Adjust the number if you change the amount of rows */
+.calendar-grid > .grid-cell:nth-last-child(-n+7) {
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Ensure the top-left empty spacer has no borders at all */
+.grid-spacer, .calendar-grid > div:first-child {
+  border: none !important;
+}
