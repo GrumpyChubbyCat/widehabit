@@ -54,3 +54,77 @@ pub fn IconSettings() -> impl IntoView {
     let svg = include_str!("../public/assets/icons/settings.svg");
     view! { <span class="icon-wrapper" inner_html=svg /> }
 }
+
+#[component]
+pub fn NewHabitModal(
+    set_show_modal: WriteSignal<bool>,
+) -> impl IntoView {
+    let (new_habit_name, set_new_habit_name) = signal(String::new());
+    let (new_habit_desc, set_new_habit_desc) = signal(String::new());
+    let (is_loading, set_is_loading) = signal(false);
+    let (has_error, set_has_error) = signal(false);
+
+    let auth = use_context::<crate::api::client::AuthFlowClient>()
+        .expect("AuthFlowClient should be provided in context");
+
+    let on_add_habit = move |_| {
+        let auth = auth.clone();
+        set_is_loading.set(true);
+        set_has_error.set(false);
+
+        leptos::task::spawn_local(async move {
+            let desc = new_habit_desc.get();
+            let req = shared::model::habit::NewHabitReq {
+                name: new_habit_name.get(),
+                description: if desc.is_empty() { None } else { Some(desc) },
+            };
+
+            match auth.post::<_, shared::model::habit::HabitData>("/habit/", &req).await {
+                Ok(_) => {
+                    set_show_modal.set(false);
+                }
+                Err(e) => {
+                    leptos::logging::error!("Create habit error: {}", e);
+                    set_has_error.set(true);
+                }
+            }
+            set_is_loading.set(false);
+        });
+    };
+
+    view! {
+        <div class="modal-overlay">
+            <div class="modal-card">
+                <h2 class="modal-title">"New Habit"</h2>
+                <div class="modal-inputs">
+                    <MainInput
+                        label="Name"
+                        placeholder="Habit name"
+                        input_type="text"
+                        value=new_habit_name
+                        set_value=set_new_habit_name
+                        has_error=has_error.into()
+                    />
+                    <MainInput
+                        label="Description (optional)"
+                        placeholder="Habit description"
+                        input_type="text"
+                        value=new_habit_desc
+                        set_value=set_new_habit_desc
+                        has_error=has_error.into()
+                    />
+                </div>
+                {move || if has_error.get() { Some(view! { <div class="error-message">"Failed to create habit"</div> }) } else { None }}
+                <div class="modal-actions">
+                    <button class="cancel-button" on:click=move |_| set_show_modal.set(false)>"Cancel"</button>
+                    <AuthButton
+                        text="Create"
+                        loading_text="Saving..."
+                        is_loading=is_loading.into()
+                        on_click=Callback::new(on_add_habit)
+                    />
+                </div>
+            </div>
+        </div>
+    }
+}

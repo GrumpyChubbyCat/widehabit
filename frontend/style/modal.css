@@ -1,0 +1,58 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.modal-card {
+  background: var(--card-bg);
+  width: 340px;
+  padding: 30px;
+  border-radius: 30px;
+  box-shadow: var(--panel-shadow);
+}
+
+.modal-title {
+  font-size: 32px;
+  font-weight: 400;
+  margin-bottom: 30px;
+  color: var(--text-color);
+}
+
+.modal-inputs {
+  margin-bottom: 24px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.modal-actions .sign-in-button {
+  margin-top: 0;
+  width: auto;
+  flex: 1;
+}
+
+.cancel-button {
+  padding: 14px 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.cancel-button:hover {
+  color: var(--text-color);
+}

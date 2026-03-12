@@ -1,5 +1,5 @@
 use crate::api::client::AuthFlowClient;
-use crate::compontents::{AuthButton, MainInput, IconPlus, IconSettings};
+use crate::compontents::{AuthButton, MainInput, IconPlus, IconSettings, NewHabitModal};
 use leptos::task::spawn_local;
 use leptos::{IntoView, component, view};
 use leptos::{logging, prelude::*};
@@ -84,11 +84,20 @@ pub fn HabitsPage() -> impl IntoView {
     let days = vec!["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
     let times = vec!["06:00", "10:00", "14:00", "18:00", "20:00", "00:00"];
 
+    let (show_modal, set_show_modal) = signal(false);
+
     view! {
         <div class="habits-container">
+            {move || if show_modal.get() {
+                Some(view! {
+                    <NewHabitModal set_show_modal=set_show_modal />
+                })
+            } else {
+                None
+            }}
             // Left navigation rail
             <nav class="nav-rail">
-                <button class="icon-btn">
+                <button class="icon-btn" on:click=move |_| set_show_modal.set(true)>
                     <IconPlus />
                 </button>
                 <button class="icon-btn">
