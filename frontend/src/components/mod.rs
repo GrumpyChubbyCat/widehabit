@@ -3,7 +3,7 @@ pub mod modals;
 
 use crate::components::icons::IconEdit;
 use leptos::prelude::*;
-use leptos::{component, ev, view, IntoView};
+use leptos::{component, ev, view, IntoView, logging};
 use shared::model::habit::HabitData;
 use shared::model::schedule::ScheduleRes;
 use shared::model::{DayOfWeek, PagedResponse};
@@ -60,7 +60,7 @@ pub fn CalendarHabitItem(
 
     view! {
         <div class=format!("calendar-habit-item {}", bg_class)>
-            {(!hide_text).then(|| view! { <span class="habit-item-title">{title}</span> })}
+            {move || (!hide_text).then(|| view! { <span class="habit-item-title">{title.clone()}</span> })}
         </div>
     }
 }
@@ -99,7 +99,6 @@ pub fn HabitItem(
 #[component]
 pub fn CalendarCell(
     day_idx: usize,
-    day_enum: DayOfWeek,
     time: String,
     next_time: String,
     schedules: LocalResource<ScheduleRes>,
@@ -108,7 +107,8 @@ pub fn CalendarCell(
 ) -> impl IntoView {
     let time_inner_for_drop = time.clone();
     let time_inner_for_view = time.clone();
-    let next_time_inner = next_time.clone();
+    let next_time_inner_for_drop = next_time.clone();
+    let next_time_inner_for_view = next_time.clone();
 
     view! {
         <div class="grid-cell"
@@ -118,7 +118,7 @@ pub fn CalendarCell(
                 if let Some(dt) = ev.data_transfer() {
                     if let Ok(habit_id_str) = dt.get_data("text/plain") {
                         if let Ok(habit_id) = Uuid::parse_str(&habit_id_str) {
-                            set_schedule_modal_info.set(Some((habit_id, day_idx, time_inner_for_drop.clone(), next_time_inner.clone())));
+                            set_schedule_modal_info.set(Some((habit_id, day_idx, time_inner_for_drop.clone(), next_time_inner_for_drop.clone())));
                         }
                     }
                 }
@@ -128,13 +128,32 @@ pub fn CalendarCell(
                 let s_data = schedules.get();
                 let h_data = habits.get();
                 let time_inner = time_inner_for_view.clone();
+                let next_time_inner = next_time_inner_for_view.clone();
+
                 if let (Some(s_resp), Some(h_resp)) = (s_data, h_data) {
                     let filtered_schedules: Vec<_> = s_resp.schedules.iter()
                         .filter(|s| {
-                            let s_time = s.start_time.format("%H:%M").to_string();
-                            s.day == day_enum && s_time == time_inner
+                            let s_day_idx = match s.day {
+                                DayOfWeek::Monday => 0,
+                                DayOfWeek::Tuesday => 1,
+                                DayOfWeek::Wednesday => 2,
+                                DayOfWeek::Thursday => 3,
+                                DayOfWeek::Friday => 4,
+                                DayOfWeek::Saturday => 5,
+                                DayOfWeek::Sunday => 6,
+                            };
+                            let s_time_str = s.start_time.format("%H:%M").to_string();
+                            let is_in_range = if next_time_inner < time_inner {
+                                // Wrap around case (e.g., 20:00 to 00:00 or 00:00 to 06:00)
+                                s_time_str >= time_inner || s_time_str < next_time_inner
+                            } else {
+                                s_time_str >= time_inner && s_time_str < next_time_inner
+                            };
+                            s_day_idx == day_idx && is_in_range
                         })
                         .collect();
+
+                    logging::log!("Cell {} {}-{} count: {}", day_idx, time_inner, next_time_inner, filtered_schedules.len());
                     
                     let count = filtered_schedules.len();
                     let hide_text = count > 3;
@@ -182,25 +201,14 @@ pub fn CalendarGrid(
                 // Time rows and cells
                 {times_for_grid.into_iter().enumerate().map(move |(time_idx, time)| {
                     let time_clone = time.to_string();
-                    let next_time = times.get(time_idx + 1).cloned().unwrap_or("23:59");
-
+                    let next_time = times.get(time_idx + 1).cloned().unwrap_or("06:00");
+                    
                     view! {
                         <div class="time-label">{time}</div>
                         { (0..7).map(move |day_idx| {
-                            let day_enum = match day_idx {
-                                0 => DayOfWeek::Monday,
-                                1 => DayOfWeek::Tuesday,
-                                2 => DayOfWeek::Wednesday,
-                                3 => DayOfWeek::Thursday,
-                                4 => DayOfWeek::Friday,
-                                5 => DayOfWeek::Saturday,
-                                _ => DayOfWeek::Sunday,
-                            };
-
                             view! {
                                 <CalendarCell
                                     day_idx=day_idx
-                                    day_enum=day_enum
                                     time=time_clone.clone()
                                     next_time=next_time.to_string()
                                     schedules=schedules

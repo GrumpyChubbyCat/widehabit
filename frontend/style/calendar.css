@@ -66,6 +66,17 @@
   height: 100%;
   box-sizing: border-box;
   flex: 1;
+  min-height: 0; /* Allow vertical shrinking */
+  overflow: hidden;
+}
+
+.calendar-habit-item .habit-item-title {
+  font-size: clamp(10px, 2cqi, 28px);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 4px;
 }
 
 /* Ensure the top-left empty spacer has no borders at all */
