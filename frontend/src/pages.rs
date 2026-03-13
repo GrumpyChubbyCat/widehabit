@@ -85,6 +85,7 @@ pub fn HabitsPage() -> impl IntoView {
     let times = vec!["06:00", "10:00", "14:00", "18:00", "20:00", "00:00"];
 
     let (show_modal, set_show_modal) = signal(false);
+    let (editing_habit, set_editing_habit) = signal::<Option<shared::model::habit::HabitData>>(None);
     let (refresh_trigger, set_refresh_trigger) = signal(());
 
     let auth = use_context::<AuthFlowClient>().expect("AuthFlowClient should be provided in context");
@@ -109,6 +110,17 @@ pub fn HabitsPage() -> impl IntoView {
             {move || if show_modal.get() {
                 Some(view! {
                     <NewHabitModal set_show_modal=set_show_modal set_refresh_trigger=set_refresh_trigger />
+                })
+            } else {
+                None
+            }}
+            {move || if let Some(habit) = editing_habit.get() {
+                Some(view! {
+                    <crate::compontents::EditHabitModal
+                        habit=habit
+                        on_close=Callback::new(move |_: ()| set_editing_habit.set(None))
+                        set_refresh_trigger=set_refresh_trigger
+                    />
                 })
             } else {
                 None
@@ -140,11 +152,15 @@ pub fn HabitsPage() -> impl IntoView {
                                 view! {
                                     <div class="habits-list">
                                         {resp.items.into_iter().enumerate().map(|(i, habit)| {
+                                            let habit_clone = habit.clone();
                                             view! {
                                                 <crate::compontents::HabitItem
-                                                    title=habit.name
-                                                    description=habit.description.unwrap_or_default()
+                                                    title=habit.name.clone()
+                                                    description=habit.description.clone().unwrap_or_default()
                                                     color_index=i
+                                                    on_edit=Callback::new(move |_| {
+                                                        set_editing_habit.set(Some(habit_clone.clone()));
+                                                    })
                                                 />
                                             }
                                         }).collect_view()}

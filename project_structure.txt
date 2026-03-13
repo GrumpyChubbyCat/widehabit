@@ -1,0 +1,90 @@
+.
+├── Cargo.lock
+├── Cargo.toml
+├── diesel.toml
+├── docker # docker files and configs
+│   ├── Dockerfile.migrations
+│   ├── Dockerfile.service
+│   ├── prometheus.yml
+│   └── promtail.yml
+├── docker-compose.yaml # docker services
+├── frontend # widehabit web leptos we ui
+│   ├── Cargo.toml
+│   ├── index.html
+│   ├── public
+│   │   └── assets
+│   │       └── icons
+│   │           ├── plus.svg
+│   │           └── settings.svg
+│   ├── src
+│   │   ├── api # Api related services and errors
+│   │   │   ├── client.rs
+│   │   │   ├── errors.rs
+│   │   │   └── mod.rs
+│   │   ├── compontents.rs # ui compontents: buttons, modal windows, inputs
+│   │   ├── lib.rs 
+│   │   ├── main.rs
+│   │   └── pages.rs # ui pages
+│   ├── style # .css files, separated by components with common styles in base.css
+│   │   ├── auth.css
+│   │   ├── base.css
+│   │   ├── calendar.css
+│   │   ├── habit-item.css
+│   │   ├── layout.css
+│   │   └── modal.css
+│   └── Trunk.toml
+├── migrations # migrations folder
+├── README.md
+├── server # widehabit axum api
+│   ├── Cargo.lock
+│   ├── Cargo.toml
+│   └── src
+│       ├── api
+│       │   ├── docs.rs # utoipa retaled api docs
+│       │   ├── errors.rs # api errors mappers
+│       │   ├── extractors.rs # acces and refresh extractors, serialization converters
+│       │   ├── mod.rs
+│       │   ├── router
+│       │   │   ├── auth.rs # registration and authorization api handlers
+│       │   │   ├── habit.rs # habits related handlers
+│       │   │   ├── health.rs # healthcheck 
+│       │   │   ├── log.rs # habbits logging handlers
+│       │   │   ├── mod.rs # constructed api router
+│       │   │   └── schedule.rs # habbits planning handlers
+│       │   └── state.rs # services state
+│       ├── bin
+│       │   └── arghash.rs
+│       ├── config.rs # application configurations
+│       ├── db # database related layer: models, repositories
+│       │   ├── entity.rs
+│       │   ├── mod.rs
+│       │   ├── repo
+│       │   │   ├── habit.rs
+│       │   │   ├── log.rs
+│       │   │   ├── mod.rs
+│       │   │   ├── schedule.rs
+│       │   │   └── user.rs
+│       │   └── schema.rs
+│       ├── errors.rs # Error types for mapping
+│       ├── lib.rs
+│       ├── main.rs
+│       ├── model # refresh and access models
+│       │   ├── auth.rs
+│       │   └── mod.rs
+│       └── service # service layer
+│           ├── habit.rs
+│           ├── log.rs
+│           ├── mod.rs
+│           ├── schedule.rs
+│           └── user.rs
+├── shared # shared backend and frontend models
+    ├── Cargo.toml
+    └── src
+        ├── lib.rs
+        └── model
+            ├── auth.rs
+            ├── habit.rs
+            ├── log.rs
+            ├── mod.rs
+            ├── schedule.rs
+            └── user.rs

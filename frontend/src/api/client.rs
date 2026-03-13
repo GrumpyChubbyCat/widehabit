@@ -138,6 +138,19 @@ impl AuthFlowClient {
         resp.json::<Res>().await.map_err(|e| e.to_string())
     }
 
+    pub async fn patch<Req, Res>(&self, path: &str, body: &Req) -> Result<Res, String>
+    where
+        Req: serde::Serialize,
+        Res: serde::de::DeserializeOwned,
+    {
+        let url = format!("{}{}", self.base_url, path);
+        let body = serde_json::to_value(body).map_err(|e| e.to_string())?;
+
+        let resp = self.execute(|| Request::patch(&url).json(&body)).await?;
+
+        resp.json::<Res>().await.map_err(|e| e.to_string())
+    }
+
     pub async fn delete<Res>(&self, path: &str) -> Result<Res, String>
     where
         Res: serde::de::DeserializeOwned,

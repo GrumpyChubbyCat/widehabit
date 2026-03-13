@@ -6,7 +6,30 @@
   flex-direction: column;
   gap: 8px;
   box-sizing: border-box;
-  box-shadow: var(--panel-shadow)
+  box-shadow: var(--panel-shadow);
+  position: relative;
+}
+
+.habit-desc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.habit-item-actions {
+  display: flex;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.habit-item-actions svg {
+  width: 18px;
+  height: 18px;
+}
+
+.habit-item:hover .habit-item-actions {
+  opacity: 1;
 }
 
 .habit-item-title {

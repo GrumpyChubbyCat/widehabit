@@ -56,17 +56,108 @@ pub fn IconSettings() -> impl IntoView {
 }
 
 #[component]
+pub fn IconEdit() -> impl IntoView {
+    let svg = include_str!("../public/assets/icons/pen.svg");
+    view! { <span class="icon-wrapper" inner_html=svg /> }
+}
+
+#[component]
 pub fn HabitItem(
     #[prop(into)] title: String,
     #[prop(into)] description: String,
     #[prop(into)] color_index: usize,
+    #[prop(optional)] on_edit: Option<Callback<ev::MouseEvent>>,
 ) -> impl IntoView {
     let bg_class = format!("habit-bg-{}", color_index % 5);
     
     view! {
         <div class=format!("habit-item {}", bg_class)>
             <h3 class="habit-item-title">{title}</h3>
-            <p class="habit-item-desc">{description}</p>
+            <div class="habit-desc-row">
+                <p class="habit-item-desc">{description}</p>
+                <div class="habit-item-actions" on:click=move |ev| { if let Some(cb) = on_edit { cb.run(ev); } }>
+                    <IconEdit />
+                </div>
+            </div>
+        </div>
+    }
+}
+
+#[component]
+pub fn EditHabitModal(
+    habit: shared::model::habit::HabitData,
+    on_close: Callback<()>,
+    set_refresh_trigger: WriteSignal<()>,
+) -> impl IntoView {
+    let (new_habit_name, set_new_habit_name) = signal(habit.name.clone());
+    let (new_habit_desc, set_new_habit_desc) = signal(habit.description.clone().unwrap_or_default());
+    let (is_loading, set_is_loading) = signal(false);
+    let (has_error, set_has_error) = signal(false);
+
+    let auth = use_context::<crate::api::client::AuthFlowClient>()
+        .expect("AuthFlowClient should be provided in context");
+
+    let on_save_habit = move |_| {
+        let auth = auth.clone();
+        let habit_id = habit.habit_id;
+        set_is_loading.set(true);
+        set_has_error.set(false);
+
+        leptos::task::spawn_local(async move {
+            let desc = new_habit_desc.get();
+            let req = shared::model::habit::NewHabitReq {
+                name: new_habit_name.get(),
+                description: if desc.is_empty() { None } else { Some(desc) },
+            };
+
+            let path = format!("/habit/{}", habit_id);
+            match auth.patch::<_, shared::model::habit::UpdateHabitRes>(&path, &req).await {
+                Ok(_) => {
+                    on_close.run(());
+                    set_refresh_trigger.set(());
+                }
+                Err(e) => {
+                    leptos::logging::error!("Update habit error: {}", e);
+                    set_has_error.set(true);
+                }
+            }
+            set_is_loading.set(false);
+        });
+    };
+
+    view! {
+        <div class="modal-overlay">
+            <div class="modal-card">
+                <h2 class="modal-title">"Edit Habit"</h2>
+                <div class="modal-inputs">
+                    <MainInput
+                        label="Name"
+                        placeholder="Habit name"
+                        input_type="text"
+                        value=new_habit_name
+                        set_value=set_new_habit_name
+                        has_error=has_error.into()
+                    />
+                    <MainInput
+                        label="Description (optional)"
+                        placeholder="Habit description"
+                        input_type="text"
+                        value=new_habit_desc
+                        set_value=set_new_habit_desc
+                        has_error=has_error.into()
+                    />
+                </div>
+                {move || if has_error.get() { Some(view! { <div class="error-message">"Failed to update habit"</div> }) } else { None }}
+                <div class="modal-actions">
+                    <button class="cancel-button" on:click=move |_| on_close.run(())>"Cancel"</button>
+                    <AuthButton
+                        text="Save"
+                        loading_text="Saving..."
+                        is_loading=is_loading.into()
+                        on_click=Callback::new(on_save_habit)
+                    />
+                </div>
+            </div>
         </div>
     }
 }
