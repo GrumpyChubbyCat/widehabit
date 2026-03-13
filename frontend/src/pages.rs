@@ -1,13 +1,21 @@
 use crate::api::client::AuthFlowClient;
-use crate::compontents::{AuthButton, MainInput, IconPlus, IconSettings, NewHabitModal};
+use crate::compontents::{
+    AuthButton, CalendarGrid, EditHabitModal, HabitItem, IconPlus, IconSettings,
+    MainInput, NewHabitModal, ScheduleHabitModal,
+};
 use leptos::task::spawn_local;
-use leptos::{IntoView, component, view};
+use leptos::{component, view, IntoView};
 use leptos::{logging, prelude::*};
+use shared::model::habit::HabitData;
+use shared::model::schedule::ScheduleRes;
 use shared::model::user::UserAuthReq;
+use shared::model::PagedResponse;
+use uuid::Uuid;
 
 #[component]
 pub fn LoginPage() -> impl IntoView {
-    let auth = use_context::<AuthFlowClient>().expect("AuthFlowClient should be provided in context");
+    let auth =
+        use_context::<AuthFlowClient>().expect("AuthFlowClient should be provided in context");
 
     let (username, set_username) = signal(String::new());
     let (password, set_password) = signal(String::new());
@@ -85,46 +93,68 @@ pub fn HabitsPage() -> impl IntoView {
     let times = vec!["06:00", "10:00", "14:00", "18:00", "20:00", "00:00"];
 
     let (show_modal, set_show_modal) = signal(false);
-    let (editing_habit, set_editing_habit) = signal::<Option<shared::model::habit::HabitData>>(None);
+    let (editing_habit, set_editing_habit) = signal::<Option<HabitData>>(None);
+    let (schedule_modal_info, set_schedule_modal_info) =
+        signal::<Option<(Uuid, usize, String, String)>>(None);
     let (refresh_trigger, set_refresh_trigger) = signal(());
 
-    let auth = use_context::<AuthFlowClient>().expect("AuthFlowClient should be provided in context");
+    let auth =
+        use_context::<AuthFlowClient>().expect("AuthFlowClient should be provided in context");
 
-    let habits = LocalResource::new(move || {
+    let schedules = {
         let auth = auth.clone();
-        refresh_trigger.get();
-        async move {
-            let res: Result<shared::model::PagedResponse<shared::model::habit::HabitData>, String> =
-                auth.get("/habit?page=1&limit=7").await;
-            res.unwrap_or_else(|_| shared::model::PagedResponse {
-                items: vec![],
-                total_count: 0,
-                page: 1,
-                page_size: 100,
-            })
-        }
-    });
+        LocalResource::new(move || {
+            let auth = auth.clone();
+            refresh_trigger.get();
+            async move {
+                let res: Result<ScheduleRes, String> = auth.get("/schedule").await;
+                res.unwrap_or_else(|_| ScheduleRes { schedules: vec![] })
+            }
+        })
+    };
+
+    let habits = {
+        let auth = auth.clone();
+        LocalResource::new(move || {
+            let auth = auth.clone();
+            refresh_trigger.get();
+            async move {
+                let res: Result<PagedResponse<HabitData>, String> =
+                    auth.get("/habit?page=1&limit=7").await;
+                res.unwrap_or_else(|_| PagedResponse {
+                    items: vec![],
+                    total_count: 0,
+                    page: 1,
+                    page_size: 100,
+                })
+            }
+        })
+    };
 
     view! {
         <div class="habits-container">
-            {move || if show_modal.get() {
-                Some(view! {
-                    <NewHabitModal set_show_modal=set_show_modal set_refresh_trigger=set_refresh_trigger />
-                })
-            } else {
-                None
-            }}
-            {move || if let Some(habit) = editing_habit.get() {
-                Some(view! {
-                    <crate::compontents::EditHabitModal
-                        habit=habit
-                        on_close=Callback::new(move |_: ()| set_editing_habit.set(None))
-                        set_refresh_trigger=set_refresh_trigger
-                    />
-                })
-            } else {
-                None
-            }}
+            <Suspense>
+                {move || if show_modal.get() {
+                    Some(view! {
+                        <NewHabitModal set_show_modal=set_show_modal set_refresh_trigger=set_refresh_trigger />
+                    })
+                } else {
+                    None
+                }}
+            </Suspense>
+            <Suspense>
+                {move || if let Some(habit) = editing_habit.get() {
+                    Some(view! {
+                        <EditHabitModal
+                            habit=habit
+                            on_close=Callback::new(move |_: ()| set_editing_habit.set(None))
+                            set_refresh_trigger=set_refresh_trigger
+                        />
+                    })
+                } else {
+                    None
+                }}
+            </Suspense>
             // Left navigation rail
             <nav class="nav-rail">
                 <button class="icon-btn" on:click=move |_| set_show_modal.set(true)>
@@ -149,23 +179,24 @@ pub fn HabitsPage() -> impl IntoView {
                                     </div>
                                 }.into_any()
                             } else {
-                                view! {
-                                    <div class="habits-list">
-                                        {resp.items.into_iter().enumerate().map(|(i, habit)| {
-                                            let habit_clone = habit.clone();
-                                            view! {
-                                                <crate::compontents::HabitItem
-                                                    title=habit.name.clone()
-                                                    description=habit.description.clone().unwrap_or_default()
-                                                    color_index=i
-                                                    on_edit=Callback::new(move |_| {
-                                                        set_editing_habit.set(Some(habit_clone.clone()));
-                                                    })
-                                                />
-                                            }
-                                        }).collect_view()}
-                                    </div>
-                                }.into_any()
+                                                view! {
+                                                    <div class="habits-list">
+                                                        {resp.items.iter().enumerate().map(|(i, habit)| {
+                                                            let habit_clone = habit.clone();
+                                                            view! {
+                                                                <HabitItem
+                                                                    habit_id=habit_clone.habit_id
+                                                                    title=habit.name.clone()
+                                                                    description=habit.description.clone().unwrap_or_default()
+                                                                    color_index=i
+                                                                    on_edit=Callback::new(move |_| {
+                                                                        set_editing_habit.set(Some(habit_clone.clone()));
+                                                                    })
+                                                                />
+                                                            }
+                                                        }).collect_view()}
+                                                    </div>
+                                                }.into_any()
                             }
                         } else {
                             view! { <div class="habits-empty-state">"Loading..."</div> }.into_any()
@@ -175,23 +206,32 @@ pub fn HabitsPage() -> impl IntoView {
             </aside>
 
             // Main grid
-            <main class="calendar-view">
-                <div class="calendar-grid">
-                    // Day headers
-                    <div></div> // Spacer for the time column
-                    {days.into_iter().map(|day| view! {
-                        <div class="day-header">{day}</div>
-                    }).collect_view()}
+            <Suspense fallback=move || view! { <div class="calendar-view">"Loading calendar..."</div> }>
+                <CalendarGrid
+                    days=days
+                    times=times
+                    schedules=schedules
+                    habits=habits
+                    set_schedule_modal_info=set_schedule_modal_info
+                />
+            </Suspense>
 
-                    // Time rows and cells
-                    {times.into_iter().map(|time| view! {
-                        <div class="time-label">{time}</div>
-                        { (0..7).map(|_| view! {
-                            <div class="grid-cell"></div>
-                        }).collect_view() }
-                    }).collect_view()}
-                </div>
-            </main>
+            <Suspense>
+                {move || if let Some((habit_id, day_idx, start_time, end_time)) = schedule_modal_info.get() {
+                    view! {
+                        <ScheduleHabitModal
+                            habit_id=habit_id
+                            day_idx=day_idx
+                            start_time_str=start_time
+                            end_time_str=end_time
+                            on_close=Callback::new(move |_| set_schedule_modal_info.set(None))
+                            set_refresh_trigger=set_refresh_trigger
+                        />
+                    }.into_any()
+                } else {
+                    view! { <span/> }.into_any()
+                }}
+            </Suspense>
         </div>
     }
 }

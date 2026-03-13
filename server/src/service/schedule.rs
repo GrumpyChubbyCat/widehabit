@@ -21,6 +21,26 @@ impl HabitScheduleService {
         }
     }
 
+    pub async fn get_all(&self, user_id: Uuid) -> Result<Vec<ScheduleItemRes>, InternalError> {
+        let last_plans_db = self.habit_schedule_repo.get_all(user_id).await?;
+
+        last_plans_db
+            .into_iter()
+            .map(|schedule_item| {
+                Ok(ScheduleItemRes {
+                    schedule_id: schedule_item.habit_schedule_id,
+                    habit_id: schedule_item.habit_id,
+                    version_id: schedule_item.version_id,
+                    day: DayOfWeek::try_from(schedule_item.day_of_week)
+                        .map_err(|_| InternalError::Cast("Cant cast i16 to DayOfWeek".into()))?,
+                    start_time: schedule_item.start_time,
+                    end_time: schedule_item.end_time,
+                    created_at: schedule_item.created_at,
+                })
+            })
+            .collect()
+    }
+
     pub async fn get(
         &self,
         habit_id: Uuid,

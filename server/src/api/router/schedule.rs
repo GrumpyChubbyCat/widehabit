@@ -24,7 +24,32 @@ pub const SCHEDULE_TAG: &str = "schedule";
 pub fn schedule_router() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(set_schedule))
+        .routes(routes!(get_all_schedules))
         .routes(routes!(get_schedule))
+}
+
+#[utoipa::path(
+    get, 
+    path = "/",
+    tag = SCHEDULE_TAG,
+    responses(
+        (status = OK, description = "All user schedules found successfully", body = ScheduleRes),
+    ),
+    security(
+        ("api_key" = [])
+    )
+)]
+async fn get_all_schedules(
+    State(schedule_service): State<Arc<HabitScheduleService>>,
+    access_claims: RoleClaims<AnyUser>,
+) -> Result<Json<ScheduleRes>, InternalError> {
+    let user_id = access_claims.0.sub;
+
+    let schedules_res = schedule_service.get_all(user_id).await?;
+
+    Ok(Json(ScheduleRes {
+        schedules: schedules_res,
+    }))
 }
 
 #[utoipa::path(

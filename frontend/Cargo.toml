@@ -1,24 +1,17 @@
 [package]
 name = "frontend"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
-# Core dependencies
+leptos = { version = "0.7.1", features = ["csr"] }
+leptos_router = { version = "0.7.1" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+shared = { path = "../shared" }
+wasm-bindgen = "0.2.99"
+web-sys = { version = "0.3.76", features = ["Storage", "DragEvent", "DataTransfer"] }
+console_error_panic_hook = "0.1.7"
 gloo-net = "0.6.0"
-leptos = { version = "0.8.15", features = ["csr"] }
-
-# Serialization
-serde.workspace = true
-serde_json.workspace = true
-serde-aux.workspace = true
-shared = { path = "../shared"}
-web-sys = {version = "0.3.91", features = ["Storage"]}
-leptos_router = "0.8.12"
-uuid.workspace = true
-
-[profile.release]
-codegen-units = 1
-lto = true
-opt-level = "z"
-panic = "abort"
