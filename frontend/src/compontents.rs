@@ -62,6 +62,12 @@ pub fn IconEdit() -> impl IntoView {
 }
 
 #[component]
+pub fn IconTrash() -> impl IntoView {
+    let svg = include_str!("../public/assets/icons/trash.svg");
+    view! { <span class="icon-wrapper" inner_html=svg /> }
+}
+
+#[component]
 pub fn HabitItem(
     #[prop(into)] title: String,
     #[prop(into)] description: String,
@@ -93,12 +99,14 @@ pub fn EditHabitModal(
     let (new_habit_desc, set_new_habit_desc) = signal(habit.description.clone().unwrap_or_default());
     let (is_loading, set_is_loading) = signal(false);
     let (has_error, set_has_error) = signal(false);
+    let (show_delete_confirm, set_show_delete_confirm) = signal(false);
 
     let auth = use_context::<crate::api::client::AuthFlowClient>()
         .expect("AuthFlowClient should be provided in context");
 
-    let on_save_habit = move |_| {
-        let auth = auth.clone();
+    let auth_for_save = auth.clone();
+    let on_save_habit = Callback::new(move |_| {
+        let auth = auth_for_save.clone();
         let habit_id = habit.habit_id;
         set_is_loading.set(true);
         set_has_error.set(false);
@@ -123,38 +131,110 @@ pub fn EditHabitModal(
             }
             set_is_loading.set(false);
         });
-    };
+    });
+
+    view! {
+        {move || if show_delete_confirm.get() {
+            view! {
+                <DeleteHabitModal
+                    habit_id=habit.habit_id
+                    on_cancel=Callback::new(move |_| set_show_delete_confirm.set(false))
+                    on_success=Callback::new(move |_| {
+                        on_close.run(());
+                        set_refresh_trigger.set(());
+                    })
+                />
+            }.into_any()
+        } else {
+            view! {
+                <div class="modal-overlay">
+                    <div class="modal-card">
+                        <div class="modal-header">
+                            <h2 class="modal-title">"Edit Habit"</h2>
+                            <button class="delete-btn" on:click=move |_| set_show_delete_confirm.set(true)>
+                                <IconTrash />
+                            </button>
+                        </div>
+                        <div class="modal-inputs">
+                            <MainInput
+                                label="Name"
+                                placeholder="Habit name"
+                                input_type="text"
+                                value=new_habit_name
+                                set_value=set_new_habit_name
+                                has_error=has_error.into()
+                            />
+                            <MainInput
+                                label="Description (optional)"
+                                placeholder="Habit description"
+                                input_type="text"
+                                value=new_habit_desc
+                                set_value=set_new_habit_desc
+                                has_error=has_error.into()
+                            />
+                        </div>
+                        {move || if has_error.get() { Some(view! { <div class="error-message">"Failed to update habit"</div> }) } else { None }}
+                        <div class="modal-actions">
+                            <button class="cancel-button" on:click=move |_| on_close.run(())>"Cancel"</button>
+                            <AuthButton
+                                text="Save"
+                                loading_text="Saving..."
+                                is_loading=is_loading.into()
+                                on_click=on_save_habit
+                            />
+                        </div>
+                    </div>
+                </div>
+            }.into_any()
+        }}
+    }
+}
+
+#[component]
+pub fn DeleteHabitModal(
+    habit_id: uuid::Uuid,
+    on_cancel: Callback<()>,
+    on_success: Callback<()>,
+) -> impl IntoView {
+    let (is_loading, set_is_loading) = signal(false);
+    let (has_error, set_has_error) = signal(false);
+
+    let auth = use_context::<crate::api::client::AuthFlowClient>()
+        .expect("AuthFlowClient should be provided in context");
+
+    let on_delete_habit = Callback::new(move |_| {
+        let auth = auth.clone();
+        set_is_loading.set(true);
+        set_has_error.set(false);
+
+        leptos::task::spawn_local(async move {
+            let path = format!("/habit/{}", habit_id);
+            match auth.delete::<()>(&path).await {
+                Ok(_) => {
+                    on_success.run(());
+                }
+                Err(e) => {
+                    leptos::logging::error!("Delete habit error: {}", e);
+                    set_has_error.set(true);
+                }
+            }
+            set_is_loading.set(false);
+        });
+    });
 
     view! {
         <div class="modal-overlay">
             <div class="modal-card">
-                <h2 class="modal-title">"Edit Habit"</h2>
-                <div class="modal-inputs">
-                    <MainInput
-                        label="Name"
-                        placeholder="Habit name"
-                        input_type="text"
-                        value=new_habit_name
-                        set_value=set_new_habit_name
-                        has_error=has_error.into()
-                    />
-                    <MainInput
-                        label="Description (optional)"
-                        placeholder="Habit description"
-                        input_type="text"
-                        value=new_habit_desc
-                        set_value=set_new_habit_desc
-                        has_error=has_error.into()
-                    />
-                </div>
-                {move || if has_error.get() { Some(view! { <div class="error-message">"Failed to update habit"</div> }) } else { None }}
+                <h2 class="modal-title">"Delete Habit?"</h2>
+                <p style="margin-bottom: 24px;">"Are you sure you want to delete this habit? This action cannot be undone."</p>
+                {move || if has_error.get() { Some(view! { <div class="error-message">"Failed to delete habit"</div> }) } else { None }}
                 <div class="modal-actions">
-                    <button class="cancel-button" on:click=move |_| on_close.run(())>"Cancel"</button>
+                    <button class="cancel-button" on:click=move |_| on_cancel.run(())>"No"</button>
                     <AuthButton
-                        text="Save"
-                        loading_text="Saving..."
+                        text="Yes, Delete"
+                        loading_text="Deleting..."
                         is_loading=is_loading.into()
-                        on_click=Callback::new(on_save_habit)
+                        on_click=on_delete_habit
                     />
                 </div>
             </div>

@@ -15,6 +15,7 @@ serde-aux.workspace = true
 shared = { path = "../shared"}
 web-sys = {version = "0.3.91", features = ["Storage"]}
 leptos_router = "0.8.12"
+uuid.workspace = true
 
 [profile.release]
 codegen-units = 1

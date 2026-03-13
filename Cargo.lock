@@ -917,6 +917,7 @@ dependencies = [
  "serde-aux",
  "serde_json",
  "shared",
+ "uuid",
  "web-sys",
 ]
 
