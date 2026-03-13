@@ -1,8 +1,7 @@
 use crate::api::client::AuthFlowClient;
-use crate::compontents::{
-    AuthButton, CalendarGrid, EditHabitModal, HabitItem, IconPlus, IconSettings,
-    MainInput, NewHabitModal, ScheduleHabitModal,
-};
+use crate::components::icons::{IconPlus, IconSettings};
+use crate::components::modals::{EditHabitModal, NewHabitModal, ScheduleHabitModal};
+use crate::components::{AuthButton, CalendarGrid, HabitItem, MainInput};
 use leptos::task::spawn_local;
 use leptos::{component, view, IntoView};
 use leptos::{logging, prelude::*};
@@ -64,7 +63,7 @@ pub fn LoginPage() -> impl IntoView {
                         has_error=has_error.into()
                     />
                     // Password block
-                     <MainInput
+                    <MainInput
                         label="password"
                         placeholder="*********"
                         input_type="password"

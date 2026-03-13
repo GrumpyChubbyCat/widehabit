@@ -1,0 +1,217 @@
+pub mod icons;
+pub mod modals;
+
+use crate::components::icons::IconEdit;
+use leptos::prelude::*;
+use leptos::{component, ev, view, IntoView};
+use shared::model::habit::HabitData;
+use shared::model::schedule::ScheduleRes;
+use shared::model::{DayOfWeek, PagedResponse};
+use uuid::Uuid;
+
+#[component]
+pub fn MainInput(
+    #[prop(into)] label: String,
+    #[prop(into)] placeholder: String,
+    #[prop(into)] input_type: String,
+    value: ReadSignal<String>,
+    set_value: WriteSignal<String>,
+    #[prop(optional)] has_error: Signal<bool>,
+) -> impl IntoView {
+    view! {
+        <div class="input-group">
+            <input
+                type=input_type
+                placeholder=placeholder
+                class=move || if has_error.get() { "has-error" } else { "" }
+                prop:value=value
+                on:input=move |event| set_value.set(event_target_value(&event))
+            />
+            <label class="input-label">{label}</label>
+        </div>
+    }
+}
+
+#[component]
+pub fn AuthButton(
+    #[prop(into)] text: String,
+    #[prop(into)] loading_text: String,
+    is_loading: Signal<bool>,
+    on_click: Callback<ev::MouseEvent>,
+) -> impl IntoView {
+    view! {
+        <button
+            class="sign-in-button"
+            disabled=is_loading
+            on:click=move |ev| on_click.run(ev)
+        >
+            {move || if is_loading.get() {loading_text.clone()} else {text.clone()} }
+        </button>
+    }
+}
+
+#[component]
+pub fn CalendarHabitItem(
+    #[prop(into)] title: String,
+    #[prop(into)] color_index: usize,
+    #[prop(optional)] hide_text: bool,
+) -> impl IntoView {
+    let bg_class = format!("habit-bg-{}", color_index % 5);
+
+    view! {
+        <div class=format!("calendar-habit-item {}", bg_class)>
+            {(!hide_text).then(|| view! { <span class="habit-item-title">{title}</span> })}
+        </div>
+    }
+}
+
+#[component]
+pub fn HabitItem(
+    #[prop(into)] habit_id: Uuid,
+    #[prop(into)] title: String,
+    #[prop(into)] description: String,
+    #[prop(into)] color_index: usize,
+    #[prop(optional)] on_edit: Option<Callback<ev::MouseEvent>>,
+) -> impl IntoView {
+    let bg_class = format!("habit-bg-{}", color_index % 5);
+
+    view! {
+        <div
+            class=format!("habit-item {}", bg_class)
+            draggable="true"
+            on:dragstart=move |ev| {
+                if let Some(dt) = ev.data_transfer() {
+                    let _ = dt.set_data("text/plain", &habit_id.to_string());
+                }
+            }
+        >
+            <h3 class="habit-item-title">{title}</h3>
+            <div class="habit-desc-row">
+                <p class="habit-item-desc">{description}</p>
+                <div class="habit-item-actions" on:click=move |ev| { if let Some(cb) = on_edit { cb.run(ev); } }>
+                    <IconEdit />
+                </div>
+            </div>
+        </div>
+    }
+}
+
+#[component]
+pub fn CalendarCell(
+    day_idx: usize,
+    day_enum: DayOfWeek,
+    time: String,
+    next_time: String,
+    schedules: LocalResource<ScheduleRes>,
+    habits: LocalResource<PagedResponse<HabitData>>,
+    set_schedule_modal_info: WriteSignal<Option<(Uuid, usize, String, String)>>,
+) -> impl IntoView {
+    let time_inner_for_drop = time.clone();
+    let time_inner_for_view = time.clone();
+    let next_time_inner = next_time.clone();
+
+    view! {
+        <div class="grid-cell"
+            on:dragover=move |ev| ev.prevent_default()
+            on:drop=move |ev| {
+                ev.prevent_default();
+                if let Some(dt) = ev.data_transfer() {
+                    if let Ok(habit_id_str) = dt.get_data("text/plain") {
+                        if let Ok(habit_id) = Uuid::parse_str(&habit_id_str) {
+                            set_schedule_modal_info.set(Some((habit_id, day_idx, time_inner_for_drop.clone(), next_time_inner.clone())));
+                        }
+                    }
+                }
+            }
+        >
+            {move || {
+                let s_data = schedules.get();
+                let h_data = habits.get();
+                let time_inner = time_inner_for_view.clone();
+                if let (Some(s_resp), Some(h_resp)) = (s_data, h_data) {
+                    let filtered_schedules: Vec<_> = s_resp.schedules.iter()
+                        .filter(|s| {
+                            let s_time = s.start_time.format("%H:%M").to_string();
+                            s.day == day_enum && s_time == time_inner
+                        })
+                        .collect();
+                    
+                    let count = filtered_schedules.len();
+                    let hide_text = count > 3;
+
+                    filtered_schedules.into_iter()
+                        .map(|s| {
+                            let habit = h_resp.items.iter().find(|h| h.habit_id == s.habit_id);
+                            let color_index = h_resp.items.iter().position(|h| h.habit_id == s.habit_id).unwrap_or(0);
+                            let title = habit.map(|h| h.name.clone()).unwrap_or_else(|| "Unknown".to_string());
+                            view! {
+                                <CalendarHabitItem
+                                    title=title
+                                    color_index=color_index
+                                    hide_text=hide_text
+                                />
+                            }.into_any()
+                        }).collect::<Vec<_>>()
+                } else {
+                    vec![]
+                }
+            }}
+        </div>
+    }
+}
+
+#[component]
+pub fn CalendarGrid(
+    days: Vec<&'static str>,
+    times: Vec<&'static str>,
+    schedules: LocalResource<ScheduleRes>,
+    habits: LocalResource<PagedResponse<HabitData>>,
+    set_schedule_modal_info: WriteSignal<Option<(Uuid, usize, String, String)>>,
+) -> impl IntoView {
+    let times_for_grid = times.clone();
+
+    view! {
+        <main class="calendar-view">
+            <div class="calendar-grid">
+                // Day headers
+                <div></div> // Spacer for the time column
+                {days.into_iter().map(|day| view! {
+                    <div class="day-header">{day}</div>
+                }).collect_view()}
+
+                // Time rows and cells
+                {times_for_grid.into_iter().enumerate().map(move |(time_idx, time)| {
+                    let time_clone = time.to_string();
+                    let next_time = times.get(time_idx + 1).cloned().unwrap_or("23:59");
+
+                    view! {
+                        <div class="time-label">{time}</div>
+                        { (0..7).map(move |day_idx| {
+                            let day_enum = match day_idx {
+                                0 => DayOfWeek::Monday,
+                                1 => DayOfWeek::Tuesday,
+                                2 => DayOfWeek::Wednesday,
+                                3 => DayOfWeek::Thursday,
+                                4 => DayOfWeek::Friday,
+                                5 => DayOfWeek::Saturday,
+                                _ => DayOfWeek::Sunday,
+                            };
+
+                            view! {
+                                <CalendarCell
+                                    day_idx=day_idx
+                                    day_enum=day_enum
+                                    time=time_clone.clone()
+                                    next_time=next_time.to_string()
+                                    schedules=schedules
+                                    habits=habits
+                                    set_schedule_modal_info=set_schedule_modal_info
+                                />
+                            }
+                        }).collect_view() }
+                    }
+                }).collect_view()}
+            </div>
+        </main>
+    }
+}
