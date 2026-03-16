@@ -13,8 +13,14 @@ use uuid::Uuid;
 
 #[component]
 pub fn LoginPage() -> impl IntoView {
-    let auth =
-        use_context::<AuthFlowClient>().expect("AuthFlowClient should be provided in context");
+    let auth = use_context::<AuthFlowClient>();
+    let navigate = leptos_router::hooks::use_navigate();
+    
+    if auth.is_none() {
+        logging::error!("LoginPage: AuthFlowClient is MISSING from context!");
+    }
+
+    let auth = auth.expect("AuthFlowClient should be provided in context");
 
     let (username, set_username) = signal(String::new());
     let (password, set_password) = signal(String::new());
@@ -22,19 +28,28 @@ pub fn LoginPage() -> impl IntoView {
     let (has_error, _set_has_error) = signal(false);
 
     let on_sign_in = move |_| {
-        let navigate = leptos_router::hooks::use_navigate();
+        logging::log!("Sign in button clicked");
+        
+        let navigate = navigate.clone();
 
         let auth = auth.clone();
         _set_is_loading.set(true);
         _set_has_error.set(false);
 
+        let username_val = username.get_untracked();
+        let password_val = password.get_untracked();
+
         spawn_local(async move {
             let req = UserAuthReq {
-                username: username.get(),
-                password: password.get(),
+                username: username_val,
+                password: password_val,
             };
 
-            match auth.login("/auth/login", &req).await {
+            logging::log!("Calling auth.login...");
+            let res = auth.login("/auth/login", &req).await;
+            logging::log!("auth.login returned");
+
+            match res {
                 Ok(_) => {
                     navigate("/", Default::default());
                 }
