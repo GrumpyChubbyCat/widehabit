@@ -32,6 +32,25 @@
   opacity: 1;
 }
 
+.habit-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.habit-item-stats {
+  font-family: var(--main-font);
+  font-size: 16px;
+  font-weight: 500;
+  opacity: 0;
+  color: var(--text-main);
+  transition: opacity 0.2s ease-in-out;
+}
+
+.habit-item:hover .habit-item-stats {
+  opacity: 0.6;
+}
+
 .habit-item-title {
   font-family: var(--main-font);
   font-size: 28px;

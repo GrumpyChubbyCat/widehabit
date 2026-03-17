@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use shared::model::{
     PagedResponse,
-    log::{HabitLogData, NewHabitLogReq},
+    log::{HabitLogData, HabitStats, NewHabitLogReq},
 };
 
 use crate::{
@@ -83,6 +83,22 @@ impl HabitLogService {
             actual_start: created_log.actual_start,
             actual_end: created_log.actual_end,
             comment: created_log.comment,
+        })
+    }
+
+    pub async fn get_stats(
+        &self,
+        habit_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<HabitStats, InternalError> {
+        let total_minutes = self
+            .habit_log_repo
+            .get_total_minutes(habit_id, user_id)
+            .await?;
+
+        Ok(HabitStats {
+            habit_id,
+            total_minutes,
         })
     }
 }

@@ -64,6 +64,7 @@
 
 /* Calendar habit item square */
 .calendar-habit-item {
+  position: relative;
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -73,13 +74,38 @@
   box-sizing: border-box;
   flex: 1;
   min-height: 0; /* Allow vertical shrinking */
-  overflow: hidden;
+  overflow: visible; /* Changed from hidden to show tooltip */
   transition: transform 0.1s, filter 0.1s;
 }
 
 .calendar-habit-item:hover {
   transform: scale(1.02);
   filter: brightness(0.95);
+  z-index: 10;
+}
+
+.custom-tooltip {
+  visibility: hidden;
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--text-muted);
+  color: var(--card-bg);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--main-font);
+  white-space: nowrap;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.2s, visibility 0.2s;
+  pointer-events: none;
+}
+
+.calendar-habit-item:hover .custom-tooltip {
+  visibility: visible;
+  opacity: 1;
 }
 
 .calendar-habit-item .habit-item-title {

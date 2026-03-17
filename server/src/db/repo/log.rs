@@ -112,4 +112,44 @@ impl HabitLogRepository {
         })
         .await
     }
+
+    pub async fn get_total_minutes(
+        &self,
+        habit_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<i64, InternalError> {
+        let mut conn = self.db_pool.get().await?;
+
+        // Check ownership
+        let count = habits::table
+            .filter(habits::habit_id.eq(habit_id))
+            .filter(habits::user_id.eq(user_id))
+            .count()
+            .get_result::<i64>(&mut conn)
+            .await?;
+
+        if count == 0 {
+            return Err(InternalError::NotFound);
+        }
+
+        let logs = habit_logs::table
+            .filter(habit_logs::habit_id.eq(habit_id))
+            .filter(habit_logs::actual_start.is_not_null())
+            .filter(habit_logs::actual_end.is_not_null())
+            .load::<HabitLog>(&mut conn)
+            .await?;
+
+        let total_minutes = logs
+            .into_iter()
+            .filter_map(|log| {
+                if let (Some(start), Some(end)) = (log.actual_start, log.actual_end) {
+                    Some((end - start).num_minutes())
+                } else {
+                    None
+                }
+            })
+            .sum();
+
+        Ok(total_minutes)
+    }
 }

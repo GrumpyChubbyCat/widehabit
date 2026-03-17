@@ -1,10 +1,12 @@
 pub mod icons;
 pub mod modals;
 
+use crate::api::client::AuthFlowClient;
 use crate::components::icons::IconEdit;
 use leptos::prelude::*;
 use leptos::{component, ev, view, IntoView, logging};
 use shared::model::habit::HabitData;
+use shared::model::log::HabitStats;
 use shared::model::schedule::ScheduleRes;
 use shared::model::{DayOfWeek, PagedResponse};
 use uuid::Uuid;
@@ -62,6 +64,7 @@ pub fn CalendarHabitItem(
     set_log_modal_info: WriteSignal<Option<(Option<Uuid>, usize, String, String)>>,
 ) -> impl IntoView {
     let bg_class = format!("habit-bg-{}", color_index % 5);
+    let tooltip = format!("{} ({} - {})", title, start_time, end_time);
 
     view! {
         <div
@@ -71,6 +74,7 @@ pub fn CalendarHabitItem(
                 set_log_modal_info.set(Some((Some(habit_id), day_idx, start_time.clone(), end_time.clone())));
             }
         >
+            <div class="custom-tooltip">{tooltip}</div>
             {move || (!hide_text).then(|| view! { <span class="habit-item-title">{title.clone()}</span> })}
         </div>
     }
@@ -85,6 +89,30 @@ pub fn HabitItem(
     #[prop(optional)] on_edit: Option<Callback<ev::MouseEvent>>,
 ) -> impl IntoView {
     let bg_class = format!("habit-bg-{}", color_index % 5);
+    let auth = use_context::<AuthFlowClient>().expect("AuthFlowClient should be provided");
+
+    let stats = LocalResource::new(
+        move || {
+            let auth = auth.clone();
+            async move {
+                auth.get::<HabitStats>(&format!("/log/{}/stats", habit_id))
+                    .await
+                    .ok()
+            }
+        },
+    );
+
+    let time_display = move || {
+        stats.get().flatten().map(|s| {
+            let hours = s.total_minutes / 60;
+            let mins = s.total_minutes % 60;
+            if hours > 0 {
+                format!("{}h {}m", hours, mins)
+            } else {
+                format!("{}m", mins)
+            }
+        }).unwrap_or_else(|| "...".to_string())
+    };
 
     view! {
         <div
@@ -96,7 +124,10 @@ pub fn HabitItem(
                 }
             }
         >
-            <h3 class="habit-item-title">{title}</h3>
+            <div class="habit-item-header">
+                <h3 class="habit-item-title">{title}</h3>
+                <span class="habit-item-stats">{time_display}</span>
+            </div>
             <div class="habit-desc-row">
                 <p class="habit-item-desc">{description}</p>
                 <div class="habit-item-actions" on:click=move |ev| { if let Some(cb) = on_edit { cb.run(ev); } }>
@@ -138,7 +169,11 @@ pub fn CalendarCell(
                 }
             }
             on:click=move |_| {
-                set_log_modal_info.set(Some((None, day_idx, time_inner_for_click.clone(), next_time_inner_for_click.clone())));
+                if let Some(h_resp) = habits.get_untracked() {
+                    if !h_resp.items.is_empty() {
+                        set_log_modal_info.set(Some((None, day_idx, time_inner_for_click.clone(), next_time_inner_for_click.clone())));
+                    }
+                }
             }
         >
             {move || {

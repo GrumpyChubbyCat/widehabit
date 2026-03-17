@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use shared::model::{
     PagedResponse, PaginationParams,
-    log::{HabitLogData, NewHabitLogReq},
+    log::{HabitLogData, HabitStats, NewHabitLogReq},
 };
 
 use crate::{
@@ -28,6 +28,33 @@ pub fn log_router() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(create_log))
         .routes(routes!(get_logs))
+        .routes(routes!(get_habit_stats))
+}
+
+#[utoipa::path(
+    get,
+    path = "/{habit_id}/stats",
+    tag = LOG_TAG,
+    params(
+        ("habit_id" = Uuid, Path, description = "Habit identifier"),
+    ),
+    responses(
+        (status = OK, description = "Habit statistics", body = HabitStats)
+    ),
+    security(
+        ("api_key" = [])
+    )
+)]
+async fn get_habit_stats(
+    State(log_service): State<Arc<HabitLogService>>,
+    access_claims: RoleClaims<AnyUser>,
+    Path(habit_id): Path<Uuid>,
+) -> Result<Json<HabitStats>, InternalError> {
+    let user_id = access_claims.0.sub;
+
+    let stats = log_service.get_stats(habit_id, user_id).await?;
+
+    Ok(Json(stats))
 }
 
 #[utoipa::path(

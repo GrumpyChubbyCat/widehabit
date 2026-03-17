@@ -22,3 +22,9 @@ pub struct HabitLogData {
     pub actual_end: Option<DateTime<Utc>>,
     pub comment: Option<String>
 }
+
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+pub struct HabitStats {
+    pub habit_id: Uuid,
+    pub total_minutes: i64,
+}
