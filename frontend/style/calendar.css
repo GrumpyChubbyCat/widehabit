@@ -43,6 +43,12 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.grid-cell:hover {
+  background-color: rgba(0, 0, 0, 0.02);
 }
 
 /* Close the grid on the far right */
@@ -68,6 +74,12 @@
   flex: 1;
   min-height: 0; /* Allow vertical shrinking */
   overflow: hidden;
+  transition: transform 0.1s, filter 0.1s;
+}
+
+.calendar-habit-item:hover {
+  transform: scale(1.02);
+  filter: brightness(0.95);
 }
 
 .calendar-habit-item .habit-item-title {

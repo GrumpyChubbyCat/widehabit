@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct NewHabitLogReq {
     pub habit_schedule_id: Option<Uuid>,
     pub log_date: Option<NaiveDate>,
@@ -12,7 +12,7 @@ pub struct NewHabitLogReq {
     pub comment: Option<String>
 }
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct HabitLogData {
     pub habit_log_id: Uuid,
     pub habit_id: Uuid,

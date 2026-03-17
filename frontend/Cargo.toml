@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-leptos = { version = "0.7.1", features = ["csr"] }
-leptos_router = { version = "0.7.1" }
+leptos = { version = "0.8.17", features = ["csr"] }
+leptos_router = { version = "0.8.12" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true }

@@ -52,14 +52,25 @@ pub fn AuthButton(
 
 #[component]
 pub fn CalendarHabitItem(
+    #[prop(into)] habit_id: Uuid,
     #[prop(into)] title: String,
     #[prop(into)] color_index: usize,
     #[prop(optional)] hide_text: bool,
+    #[prop(into)] day_idx: usize,
+    #[prop(into)] start_time: String,
+    #[prop(into)] end_time: String,
+    set_log_modal_info: WriteSignal<Option<(Option<Uuid>, usize, String, String)>>,
 ) -> impl IntoView {
     let bg_class = format!("habit-bg-{}", color_index % 5);
 
     view! {
-        <div class=format!("calendar-habit-item {}", bg_class)>
+        <div
+            class=format!("calendar-habit-item {}", bg_class)
+            on:click=move |ev| {
+                ev.stop_propagation();
+                set_log_modal_info.set(Some((Some(habit_id), day_idx, start_time.clone(), end_time.clone())));
+            }
+        >
             {move || (!hide_text).then(|| view! { <span class="habit-item-title">{title.clone()}</span> })}
         </div>
     }
@@ -104,11 +115,14 @@ pub fn CalendarCell(
     schedules: LocalResource<ScheduleRes>,
     habits: LocalResource<PagedResponse<HabitData>>,
     set_schedule_modal_info: WriteSignal<Option<(Uuid, usize, String, String)>>,
+    set_log_modal_info: WriteSignal<Option<(Option<Uuid>, usize, String, String)>>,
 ) -> impl IntoView {
     let time_inner_for_drop = time.clone();
     let time_inner_for_view = time.clone();
+    let time_inner_for_click = time.clone();
     let next_time_inner_for_drop = next_time.clone();
     let next_time_inner_for_view = next_time.clone();
+    let next_time_inner_for_click = next_time.clone();
 
     view! {
         <div class="grid-cell"
@@ -122,6 +136,9 @@ pub fn CalendarCell(
                         }
                     }
                 }
+            }
+            on:click=move |_| {
+                set_log_modal_info.set(Some((None, day_idx, time_inner_for_click.clone(), next_time_inner_for_click.clone())));
             }
         >
             {move || {
@@ -163,11 +180,20 @@ pub fn CalendarCell(
                             let habit = h_resp.items.iter().find(|h| h.habit_id == s.habit_id);
                             let color_index = h_resp.items.iter().position(|h| h.habit_id == s.habit_id).unwrap_or(0);
                             let title = habit.map(|h| h.name.clone()).unwrap_or_else(|| "Unknown".to_string());
+                            let habit_id = s.habit_id;
+                            let start_time = s.start_time.format("%H:%M").to_string();
+                            let end_time = s.end_time.format("%H:%M").to_string();
+
                             view! {
                                 <CalendarHabitItem
+                                    habit_id=habit_id
                                     title=title
                                     color_index=color_index
                                     hide_text=hide_text
+                                    day_idx=day_idx
+                                    start_time=start_time
+                                    end_time=end_time
+                                    set_log_modal_info=set_log_modal_info
                                 />
                             }.into_any()
                         }).collect::<Vec<_>>()
@@ -186,6 +212,7 @@ pub fn CalendarGrid(
     schedules: LocalResource<ScheduleRes>,
     habits: LocalResource<PagedResponse<HabitData>>,
     set_schedule_modal_info: WriteSignal<Option<(Uuid, usize, String, String)>>,
+    set_log_modal_info: WriteSignal<Option<(Option<Uuid>, usize, String, String)>>,
 ) -> impl IntoView {
     let times_for_grid = times.clone();
 
@@ -214,6 +241,7 @@ pub fn CalendarGrid(
                                     schedules=schedules
                                     habits=habits
                                     set_schedule_modal_info=set_schedule_modal_info
+                                    set_log_modal_info=set_log_modal_info
                                 />
                             }
                         }).collect_view() }

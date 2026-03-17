@@ -1,6 +1,6 @@
 use crate::api::client::AuthFlowClient;
 use crate::components::icons::{IconPlus, IconSettings};
-use crate::components::modals::{EditHabitModal, NewHabitModal, ScheduleHabitModal};
+use crate::components::modals::{EditHabitModal, LogHabitModal, NewHabitModal, ScheduleHabitModal};
 use crate::components::{AuthButton, CalendarGrid, HabitItem, MainInput};
 use leptos::task::spawn_local;
 use leptos::{component, view, IntoView};
@@ -110,6 +110,8 @@ pub fn HabitsPage() -> impl IntoView {
     let (editing_habit, set_editing_habit) = signal::<Option<HabitData>>(None);
     let (schedule_modal_info, set_schedule_modal_info) =
         signal::<Option<(Uuid, usize, String, String)>>(None);
+    let (log_modal_info, set_log_modal_info) =
+        signal::<Option<(Option<Uuid>, usize, String, String)>>(None);
     let (refresh_trigger, set_refresh_trigger) = signal(());
 
     let auth =
@@ -227,7 +229,26 @@ pub fn HabitsPage() -> impl IntoView {
                     schedules=schedules
                     habits=habits
                     set_schedule_modal_info=set_schedule_modal_info
+                    set_log_modal_info=set_log_modal_info
                 />
+            </Suspense>
+
+            <Suspense>
+                {move || if let Some((habit_id, day_idx, start_time, end_time)) = log_modal_info.get() {
+                    view! {
+                        <LogHabitModal
+                            habit_id=habit_id
+                            day_idx=day_idx
+                            start_time_str=start_time
+                            end_time_str=end_time
+                            habits=habits
+                            on_close=Callback::new(move |_| set_log_modal_info.set(None))
+                            set_refresh_trigger=set_refresh_trigger
+                        />
+                    }.into_any()
+                } else {
+                    view! { <span/> }.into_any()
+                }}
             </Suspense>
 
             <Suspense>
