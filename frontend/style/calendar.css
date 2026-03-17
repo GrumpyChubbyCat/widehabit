@@ -1,7 +1,7 @@
 /* Calendar View (Right panel styled as a card) */
 .calendar-view {
   flex: 1;
-  padding: 40px;
+  padding: 40px 40px 10px 10px;
   background: var(--card-bg); /* */
   border-radius: 30px; /* */
   box-shadow: var(--panel-shadow); /* */
@@ -11,7 +11,7 @@
 /* Grid layout container */
 .calendar-grid {
   display: grid;
-  grid-template-columns: 80px repeat(7, 1fr);
+  grid-template-columns: 50px repeat(7, 1fr);
   gap: 0;
 }
 
@@ -20,23 +20,25 @@
   font-size: 32px;
   font-weight: 400;
   text-align: center;
-  padding-bottom: 40px;
+  padding-bottom: 10px;
 }
 
 /* Time labels column - no borders here! */
 .time-label {
   font-size: 14px;
   color: var(--text-muted);
-  padding-top: 10px;
-  text-align: center;
+  padding-top: 0;
+  padding-right: 8px;
+  text-align: right;
   border: none; /* Explicitly remove any accidental borders */
+  transform: translateY(-2px);
 }
 
 /* Grid cell for habit blocks */
 .grid-cell {
   border-top: 1px solid rgba(0,0,0,0.05);
   border-left: 1px solid rgba(0,0,0,0.05);
-  height: 120px;
+  height: 125px;
   position: relative;
   padding: 4px;
   box-sizing: border-box;
