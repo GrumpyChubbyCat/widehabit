@@ -61,7 +61,7 @@ impl HabitRepository {
         let offset = (safe_page - 1) * limit;
         let habits = habits::table
             .filter(habits::user_id.eq(user_id))
-            .order(habits::created_at.desc())
+            .order(habits::created_at.asc())
             .limit(limit)
             .offset(offset) 
             .load::<Habit>(&mut conn)
