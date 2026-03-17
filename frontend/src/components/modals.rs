@@ -447,13 +447,36 @@ pub fn ScheduleHabitModal(
     on_close: Callback<()>,
     set_refresh_trigger: WriteSignal<()>,
 ) -> impl IntoView {
-    let (start_time, set_start_time) = signal(start_time_str);
-    let (end_time, set_end_time) = signal(end_time_str);
-    let (selected_days, set_selected_days) = signal({
-        let mut days = std::collections::HashSet::new();
-        days.insert(day_idx);
-        days
+    #[derive(Clone, Debug, PartialEq)]
+    struct DaySchedule {
+        day_idx: usize,
+        slots: Vec<TimeSlot>,
+    }
+
+    #[derive(Clone, Debug, PartialEq)]
+    struct TimeSlot {
+        id: Uuid,
+        start: String,
+        end: String,
+    }
+
+    let (day_schedules, set_day_schedules) = signal({
+        let mut schedules = Vec::new();
+        for i in 0..7 {
+            let slots = if i == day_idx {
+                vec![TimeSlot {
+                    id: Uuid::new_v4(),
+                    start: start_time_str.clone(),
+                    end: end_time_str.clone(),
+                }]
+            } else {
+                vec![]
+            };
+            schedules.push(DaySchedule { day_idx: i, slots });
+        }
+        schedules
     });
+
     let (is_loading, set_is_loading) = signal(false);
     let (has_error, set_has_error) = signal(false);
 
@@ -475,53 +498,62 @@ pub fn ScheduleHabitModal(
         set_is_loading.set(true);
         set_has_error.set(false);
 
-        let start = start_time.get();
-        let end = end_time.get();
-        let days = selected_days.get();
+        let schedules_data = day_schedules.get();
 
         leptos::task::spawn_local(async move {
-            // Parse times
-            let start_parsed = NaiveTime::parse_from_str(&format!("{}:00", start), "%H:%M:%S")
-                .or_else(|_| NaiveTime::parse_from_str(&start, "%H:%M"));
-            let end_parsed = NaiveTime::parse_from_str(&format!("{}:00", end), "%H:%M:%S")
-                .or_else(|_| NaiveTime::parse_from_str(&end, "%H:%M"));
+            let mut schedules = Vec::new();
 
-            if let (Ok(s), Ok(e)) = (start_parsed, end_parsed) {
-                let mut schedules = Vec::new();
-                for d_idx in days {
-                    let day_enum = match d_idx {
-                        0 => DayOfWeek::Monday,
-                        1 => DayOfWeek::Tuesday,
-                        2 => DayOfWeek::Wednesday,
-                        3 => DayOfWeek::Thursday,
-                        4 => DayOfWeek::Friday,
-                        5 => DayOfWeek::Saturday,
-                        _ => DayOfWeek::Sunday,
-                    };
-                    schedules.push(ScheduleItemReq {
-                        day: day_enum,
-                        start_time: s,
-                        end_time: e,
-                    });
-                }
-
-                let req = SetScheduleReq {
-                    habit_id,
-                    schedules,
+            for day_sched in schedules_data {
+                let day_enum = match day_sched.day_idx {
+                    0 => DayOfWeek::Monday,
+                    1 => DayOfWeek::Tuesday,
+                    2 => DayOfWeek::Wednesday,
+                    3 => DayOfWeek::Thursday,
+                    4 => DayOfWeek::Friday,
+                    5 => DayOfWeek::Saturday,
+                    _ => DayOfWeek::Sunday,
                 };
 
-                match auth.put::<_, ScheduleRes>("/schedule", &req).await {
-                    Ok(_) => {
-                        on_close.run(());
-                        set_refresh_trigger.set(());
-                    }
-                    Err(e) => {
-                        leptos::logging::error!("Schedule habit error: {}", e);
+                for slot in day_sched.slots {
+                    let start_parsed = NaiveTime::parse_from_str(&format!("{}:00", slot.start), "%H:%M:%S")
+                        .or_else(|_| NaiveTime::parse_from_str(&slot.start, "%H:%M"));
+                    let end_parsed = NaiveTime::parse_from_str(&format!("{}:00", slot.end), "%H:%M:%S")
+                        .or_else(|_| NaiveTime::parse_from_str(&slot.end, "%H:%M"));
+
+                    if let (Ok(s), Ok(e)) = (start_parsed, end_parsed) {
+                        schedules.push(ScheduleItemReq {
+                            day: day_enum,
+                            start_time: s,
+                            end_time: e,
+                        });
+                    } else {
                         set_has_error.set(true);
+                        set_is_loading.set(false);
+                        return;
                     }
                 }
-            } else {
+            }
+
+            if schedules.is_empty() {
                 set_has_error.set(true);
+                set_is_loading.set(false);
+                return;
+            }
+
+            let req = SetScheduleReq {
+                habit_id,
+                schedules,
+            };
+
+            match auth.put::<_, ScheduleRes>("/schedule", &req).await {
+                Ok(_) => {
+                    on_close.run(());
+                    set_refresh_trigger.set(());
+                }
+                Err(e) => {
+                    leptos::logging::error!("Schedule habit error: {}", e);
+                    set_has_error.set(true);
+                }
             }
             set_is_loading.set(false);
         });
@@ -529,52 +561,85 @@ pub fn ScheduleHabitModal(
 
     view! {
         <div class="modal-overlay">
-            <div class="modal-card">
+            <div class="modal-card" style="width: 400px;">
                 <h2 class="modal-title">"Schedule Habit"</h2>
-                <p class="modal-subtitle">"Select days and time"</p>
+                <p class="modal-subtitle">"Configure times for each day"</p>
 
                 <div class="modal-inputs">
-                    <div class="days-selector">
+                    <div class="day-schedules-list">
                         {days_list.into_iter().enumerate().map(|(idx, name)| {
-                            let is_selected = move || selected_days.get().contains(&idx);
+                            let day_sched = move || day_schedules.get()[idx].clone();
+                            let has_slots = move || !day_sched().slots.is_empty();
+
                             view! {
-                                <button
-                                    class="day-chip"
-                                    class:active=is_selected
-                                    on:click=move |_| {
-                                        set_selected_days.update(|days| {
-                                            if days.contains(&idx) {
-                                                if days.len() > 1 {
-                                                    days.remove(&idx);
-                                                }
-                                            } else {
-                                                days.insert(idx);
+                                <div class="day-schedule-item" class:active=has_slots>
+                                    <div class="day-schedule-header">
+                                        <span class="day-name">{name}</span>
+                                        <button
+                                            class="add-slot-mini-btn"
+                                            on:click=move |_| {
+                                                set_day_schedules.update(|schedules| {
+                                                    schedules[idx].slots.push(TimeSlot {
+                                                        id: Uuid::new_v4(),
+                                                        start: "09:00".to_string(),
+                                                        end: "10:00".to_string(),
+                                                    });
+                                                });
                                             }
-                                        });
-                                    }
-                                >
-                                    {&name[..3]}
-                                </button>
+                                        >
+                                            "+ Add time"
+                                        </button>
+                                    </div>
+
+                                    <div class="day-slots-list">
+                                        {move || day_sched().slots.into_iter().map(|slot| {
+                                            let slot_id = slot.id;
+                                            view! {
+                                                <div class="time-slot-row mini">
+                                                    <div class="time-slot-inputs">
+                                                        <input
+                                                            type="time"
+                                                            class="modal-time-input"
+                                                            prop:value=slot.start
+                                                            on:input=move |ev| {
+                                                                let val = event_target_value(&ev);
+                                                                set_day_schedules.update(|schedules| {
+                                                                    if let Some(s) = schedules[idx].slots.iter_mut().find(|s| s.id == slot_id) {
+                                                                        s.start = val;
+                                                                    }
+                                                                });
+                                                            }
+                                                        />
+                                                        <span class="time-separator">"—"</span>
+                                                        <input
+                                                            type="time"
+                                                            class="modal-time-input"
+                                                            prop:value=slot.end
+                                                            on:input=move |ev| {
+                                                                let val = event_target_value(&ev);
+                                                                set_day_schedules.update(|schedules| {
+                                                                    if let Some(s) = schedules[idx].slots.iter_mut().find(|s| s.id == slot_id) {
+                                                                        s.end = val;
+                                                                    }
+                                                                });
+                                                            }
+                                                        />
+                                                    </div>
+                                                    <button class="remove-slot-btn" on:click=move |_| {
+                                                        set_day_schedules.update(|schedules| {
+                                                            schedules[idx].slots.retain(|s| s.id != slot_id);
+                                                        });
+                                                    }>
+                                                        "×"
+                                                    </button>
+                                                </div>
+                                            }
+                                        }).collect_view()}
+                                    </div>
+                                </div>
                             }
                         }).collect_view()}
                     </div>
-
-                    <MainInput
-                        label="Start Time"
-                        placeholder="08:00"
-                        input_type="time"
-                        value=start_time
-                        set_value=set_start_time
-                        has_error=has_error.into()
-                    />
-                    <MainInput
-                        label="End Time"
-                        placeholder="09:00"
-                        input_type="time"
-                        value=end_time
-                        set_value=set_end_time
-                        has_error=has_error.into()
-                    />
                 </div>
 
                 {move || if has_error.get() { Some(view! { <div class="error-message">"Failed to schedule habit. Please check your inputs."</div> }) } else { None }}
