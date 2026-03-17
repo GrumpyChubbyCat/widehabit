@@ -8,8 +8,8 @@ pub fn IconPlus() -> impl IntoView {
 }
 
 #[component]
-pub fn IconSettings() -> impl IntoView {
-    let svg = include_str!("../../public/assets/icons/settings.svg");
+pub fn IconLogout() -> impl IntoView {
+    let svg = include_str!("../../public/assets/icons/logout.svg");
     view! { <span class="icon-wrapper" inner_html=svg /> }
 }
 

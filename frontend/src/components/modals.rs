@@ -418,6 +418,27 @@ pub fn DeleteHabitModal(
 }
 
 #[component]
+pub fn LogoutModal(on_cancel: Callback<()>, on_confirm: Callback<()>) -> impl IntoView {
+    view! {
+        <div class="modal-overlay">
+            <div class="modal-card">
+                <h2 class="modal-title">"Logout?"</h2>
+                <p style="margin-bottom: 24px;">"Are you sure you want to log out?"</p>
+                <div class="modal-actions">
+                    <button class="cancel-button" on:click=move |_| on_cancel.run(())>"No"</button>
+                    <AuthButton
+                        text="Yes, Logout"
+                        loading_text="Wait..."
+                        is_loading=false.into()
+                        on_click=Callback::new(move |_| on_confirm.run(()))
+                    />
+                </div>
+            </div>
+        </div>
+    }
+}
+
+#[component]
 pub fn ScheduleHabitModal(
     habit_id: Uuid,
     day_idx: usize,

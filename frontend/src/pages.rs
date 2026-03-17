@@ -1,6 +1,6 @@
 use crate::api::client::AuthFlowClient;
-use crate::components::icons::{IconPlus, IconSettings};
-use crate::components::modals::{EditHabitModal, LogHabitModal, NewHabitModal, ScheduleHabitModal};
+use crate::components::icons::{IconPlus, IconLogout};
+use crate::components::modals::{EditHabitModal, LogHabitModal, NewHabitModal, ScheduleHabitModal, LogoutModal};
 use crate::components::{AuthButton, CalendarGrid, HabitItem, MainInput};
 use leptos::task::spawn_local;
 use leptos::{component, view, IntoView};
@@ -112,10 +112,25 @@ pub fn HabitsPage() -> impl IntoView {
         signal::<Option<(Uuid, usize, String, String)>>(None);
     let (log_modal_info, set_log_modal_info) =
         signal::<Option<(Option<Uuid>, usize, String, String)>>(None);
+    let (show_logout_modal, set_show_logout_modal) = signal(false);
     let (refresh_trigger, set_refresh_trigger) = signal(());
 
     let auth =
         use_context::<AuthFlowClient>().expect("AuthFlowClient should be provided in context");
+
+    let navigate = leptos_router::hooks::use_navigate();
+
+    let on_logout = {
+        let auth = auth.clone();
+        let navigate = navigate.clone();
+        move |_: ()| {
+            auth.logout();
+            set_show_logout_modal.set(false);
+            navigate("/login", Default::default());
+        }
+    };
+
+    let on_logout_cb = Callback::new(on_logout);
 
     let schedules = {
         let auth = auth.clone();
@@ -176,8 +191,8 @@ pub fn HabitsPage() -> impl IntoView {
                 <button class="icon-btn" on:click=move |_| set_show_modal.set(true)>
                     <IconPlus />
                 </button>
-                <button class="icon-btn">
-                    <IconSettings />
+                <button class="icon-btn" on:click=move |_| set_show_logout_modal.set(true)>
+                    <IconLogout />
                 </button>
             </nav>
 
@@ -261,6 +276,19 @@ pub fn HabitsPage() -> impl IntoView {
                             end_time_str=end_time
                             on_close=Callback::new(move |_| set_schedule_modal_info.set(None))
                             set_refresh_trigger=set_refresh_trigger
+                        />
+                    }.into_any()
+                } else {
+                    view! { <span/> }.into_any()
+                }}
+            </Suspense>
+
+            <Suspense>
+                {move || if show_logout_modal.get() {
+                    view! {
+                        <LogoutModal
+                            on_cancel=Callback::new(move |_| set_show_logout_modal.set(false))
+                            on_confirm=on_logout_cb
                         />
                     }.into_any()
                 } else {
