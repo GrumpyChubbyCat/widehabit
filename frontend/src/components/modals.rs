@@ -428,13 +428,18 @@ pub fn ScheduleHabitModal(
 ) -> impl IntoView {
     let (start_time, set_start_time) = signal(start_time_str);
     let (end_time, set_end_time) = signal(end_time_str);
+    let (selected_days, set_selected_days) = signal({
+        let mut days = std::collections::HashSet::new();
+        days.insert(day_idx);
+        days
+    });
     let (is_loading, set_is_loading) = signal(false);
     let (has_error, set_has_error) = signal(false);
 
     let auth =
         use_context::<AuthFlowClient>().expect("AuthFlowClient should be provided in context");
 
-    let day_name = [
+    let days_list = [
         "Monday",
         "Tuesday",
         "Wednesday",
@@ -442,16 +447,7 @@ pub fn ScheduleHabitModal(
         "Friday",
         "Saturday",
         "Sunday",
-    ][day_idx];
-    let day_enum = match day_idx {
-        0 => DayOfWeek::Monday,
-        1 => DayOfWeek::Tuesday,
-        2 => DayOfWeek::Wednesday,
-        3 => DayOfWeek::Thursday,
-        4 => DayOfWeek::Friday,
-        5 => DayOfWeek::Saturday,
-        _ => DayOfWeek::Sunday,
-    };
+    ];
 
     let on_save = move |_| {
         let auth = auth.clone();
@@ -460,6 +456,7 @@ pub fn ScheduleHabitModal(
 
         let start = start_time.get();
         let end = end_time.get();
+        let days = selected_days.get();
 
         leptos::task::spawn_local(async move {
             // Parse times
@@ -469,13 +466,27 @@ pub fn ScheduleHabitModal(
                 .or_else(|_| NaiveTime::parse_from_str(&end, "%H:%M"));
 
             if let (Ok(s), Ok(e)) = (start_parsed, end_parsed) {
-                let req = SetScheduleReq {
-                    habit_id,
-                    schedules: vec![ScheduleItemReq {
+                let mut schedules = Vec::new();
+                for d_idx in days {
+                    let day_enum = match d_idx {
+                        0 => DayOfWeek::Monday,
+                        1 => DayOfWeek::Tuesday,
+                        2 => DayOfWeek::Wednesday,
+                        3 => DayOfWeek::Thursday,
+                        4 => DayOfWeek::Friday,
+                        5 => DayOfWeek::Saturday,
+                        _ => DayOfWeek::Sunday,
+                    };
+                    schedules.push(ScheduleItemReq {
                         day: day_enum,
                         start_time: s,
                         end_time: e,
-                    }],
+                    });
+                }
+
+                let req = SetScheduleReq {
+                    habit_id,
+                    schedules,
                 };
 
                 match auth.put::<_, ScheduleRes>("/schedule", &req).await {
@@ -499,9 +510,34 @@ pub fn ScheduleHabitModal(
         <div class="modal-overlay">
             <div class="modal-card">
                 <h2 class="modal-title">"Schedule Habit"</h2>
-                <p class="modal-subtitle">"Day: " {day_name}</p>
+                <p class="modal-subtitle">"Select days and time"</p>
 
                 <div class="modal-inputs">
+                    <div class="days-selector">
+                        {days_list.into_iter().enumerate().map(|(idx, name)| {
+                            let is_selected = move || selected_days.get().contains(&idx);
+                            view! {
+                                <button
+                                    class="day-chip"
+                                    class:active=is_selected
+                                    on:click=move |_| {
+                                        set_selected_days.update(|days| {
+                                            if days.contains(&idx) {
+                                                if days.len() > 1 {
+                                                    days.remove(&idx);
+                                                }
+                                            } else {
+                                                days.insert(idx);
+                                            }
+                                        });
+                                    }
+                                >
+                                    {&name[..3]}
+                                </button>
+                            }
+                        }).collect_view()}
+                    </div>
+
                     <MainInput
                         label="Start Time"
                         placeholder="08:00"
@@ -520,7 +556,7 @@ pub fn ScheduleHabitModal(
                     />
                 </div>
 
-                {move || if has_error.get() { Some(view! { <div class="error-message">"Failed to schedule habit. Ensure start time is before end time."</div> }) } else { None }}
+                {move || if has_error.get() { Some(view! { <div class="error-message">"Failed to schedule habit. Please check your inputs."</div> }) } else { None }}
 
                 <div class="modal-actions">
                     <button class="cancel-button" on:click=move |_| on_close.run(())>"Cancel"</button>
