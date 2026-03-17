@@ -241,6 +241,70 @@ pub fn CalendarCell(
 }
 
 #[component]
+pub fn NavRail(
+    set_show_modal: WriteSignal<bool>,
+    set_show_logout_modal: WriteSignal<bool>,
+) -> impl IntoView {
+    view! {
+        <nav class="nav-rail">
+            <button class="icon-btn" on:click=move |_| set_show_modal.set(true)>
+                <crate::components::icons::IconPlus />
+            </button>
+            <button class="icon-btn" on:click=move |_| set_show_logout_modal.set(true)>
+                <crate::components::icons::IconLogout />
+            </button>
+        </nav>
+    }
+}
+
+#[component]
+pub fn HabitsSidebar(
+    habits: LocalResource<PagedResponse<HabitData>>,
+    set_editing_habit: WriteSignal<Option<HabitData>>,
+) -> impl IntoView {
+    view! {
+        <aside class="habits-sidebar">
+            <h1 class="habits-title">"My Habits"</h1>
+            <Suspense fallback=move || view! { <div class="habits-empty-state">"Loading..."</div> }>
+                {move || {
+                    let data = habits.get();
+                    if let Some(resp) = data {
+                        if resp.items.is_empty() {
+                            view! {
+                                <div class="habits-empty-state">
+                                    "You have no habits yet"
+                                </div>
+                            }.into_any()
+                        } else {
+                            view! {
+                                <div class="habits-list">
+                                    {resp.items.iter().enumerate().map(|(i, habit)| {
+                                        let habit_clone = habit.clone();
+                                        view! {
+                                            <HabitItem
+                                                habit_id=habit_clone.habit_id
+                                                title=habit.name.clone()
+                                                description=habit.description.clone().unwrap_or_default()
+                                                color_index=i
+                                                on_edit=Callback::new(move |_| {
+                                                    set_editing_habit.set(Some(habit_clone.clone()));
+                                                })
+                                            />
+                                        }
+                                    }).collect_view()}
+                                </div>
+                            }.into_any()
+                        }
+                    } else {
+                        view! { <div class="habits-empty-state">"Loading..."</div> }.into_any()
+                    }
+                }}
+            </Suspense>
+        </aside>
+    }
+}
+
+#[component]
 pub fn CalendarGrid(
     days: Vec<&'static str>,
     times: Vec<&'static str>,

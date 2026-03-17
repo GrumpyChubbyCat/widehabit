@@ -1,7 +1,6 @@
 use crate::api::client::AuthFlowClient;
-use crate::components::icons::{IconPlus, IconLogout};
 use crate::components::modals::{EditHabitModal, LogHabitModal, NewHabitModal, ScheduleHabitModal, LogoutModal};
-use crate::components::{AuthButton, CalendarGrid, HabitItem, MainInput};
+use crate::components::{AuthButton, CalendarGrid, MainInput, NavRail, HabitsSidebar};
 use leptos::task::spawn_local;
 use leptos::{component, view, IntoView};
 use leptos::{logging, prelude::*};
@@ -186,55 +185,10 @@ pub fn HabitsPage() -> impl IntoView {
                     None
                 }}
             </Suspense>
-            // Left navigation rail
-            <nav class="nav-rail">
-                <button class="icon-btn" on:click=move |_| set_show_modal.set(true)>
-                    <IconPlus />
-                </button>
-                <button class="icon-btn" on:click=move |_| set_show_logout_modal.set(true)>
-                    <IconLogout />
-                </button>
-            </nav>
+            
+            <NavRail set_show_modal=set_show_modal set_show_logout_modal=set_show_logout_modal />
 
-            // Habits-list
-            <aside class="habits-sidebar">
-                <h1 class="habits-title">"My Habits"</h1>
-                <Suspense fallback=move || view! { <div class="habits-empty-state">"Loading..."</div> }>
-                    {move || {
-                        let data = habits.get();
-                        if let Some(resp) = data {
-                            if resp.items.is_empty() {
-                                view! {
-                                    <div class="habits-empty-state">
-                                        "You have no habits yet"
-                                    </div>
-                                }.into_any()
-                            } else {
-                                                view! {
-                                                    <div class="habits-list">
-                                                        {resp.items.iter().enumerate().map(|(i, habit)| {
-                                                            let habit_clone = habit.clone();
-                                                            view! {
-                                                                <HabitItem
-                                                                    habit_id=habit_clone.habit_id
-                                                                    title=habit.name.clone()
-                                                                    description=habit.description.clone().unwrap_or_default()
-                                                                    color_index=i
-                                                                    on_edit=Callback::new(move |_| {
-                                                                        set_editing_habit.set(Some(habit_clone.clone()));
-                                                                    })
-                                                                />
-                                                            }
-                                                        }).collect_view()}
-                                                    </div>
-                                                }.into_any()
-                            }
-                        } else {
-                            view! { <div class="habits-empty-state">"Loading..."</div> }.into_any()
-                        }
-                    }}
-                </Suspense>
-            </aside>
+            <HabitsSidebar habits=habits set_editing_habit=set_editing_habit />
 
             // Main grid
             <Suspense fallback=move || view! { <div class="calendar-view">"Loading calendar..."</div> }>
