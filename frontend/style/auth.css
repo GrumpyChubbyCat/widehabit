@@ -95,3 +95,18 @@
     filter: grayscale(0.5);
     pointer-events: none;
 }
+
+.auth-text-link {
+  display: block;
+  margin: 18px auto 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--link-color);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.auth-text-link:hover {
+  text-decoration: underline;
+}

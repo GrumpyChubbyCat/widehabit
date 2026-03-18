@@ -53,6 +53,22 @@ pub fn AuthButton(
 }
 
 #[component]
+pub fn AuthTextLink(
+    #[prop(into)] text: String,
+    on_click: Callback<ev::MouseEvent>,
+) -> impl IntoView {
+    view! {
+        <button
+            type="button"
+            class="auth-text-link"
+            on:click=move |ev| on_click.run(ev)
+        >
+            {text}
+        </button>
+    }
+}
+
+#[component]
 pub fn CalendarHabitItem(
     #[prop(into)] habit_id: Uuid,
     #[prop(into)] title: String,

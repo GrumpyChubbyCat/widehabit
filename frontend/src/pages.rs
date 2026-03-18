@@ -1,12 +1,12 @@
 use crate::api::client::AuthFlowClient;
 use crate::components::modals::{EditHabitModal, LogHabitModal, NewHabitModal, ScheduleHabitModal, LogoutModal};
-use crate::components::{AuthButton, CalendarGrid, MainInput, NavRail, HabitsSidebar};
+use crate::components::{AuthButton, AuthTextLink, CalendarGrid, MainInput, NavRail, HabitsSidebar};
 use leptos::task::spawn_local;
 use leptos::{component, view, IntoView};
 use leptos::{logging, prelude::*};
 use shared::model::habit::HabitData;
 use shared::model::schedule::ScheduleRes;
-use shared::model::user::UserAuthReq;
+use shared::model::user::{UserAuthReq, UserRegistrationReq};
 use shared::model::PagedResponse;
 use uuid::Uuid;
 
@@ -20,6 +20,7 @@ pub fn LoginPage() -> impl IntoView {
     }
 
     let auth = auth.expect("AuthFlowClient should be provided in context");
+    let navigate_to_registration = navigate.clone();
 
     let (username, set_username) = signal(String::new());
     let (password, set_password) = signal(String::new());
@@ -94,6 +95,129 @@ pub fn LoginPage() -> impl IntoView {
                     loading_text="Wait..."
                     is_loading=is_loading.into()
                     on_click=Callback::new(on_sign_in)
+                />
+
+                <AuthTextLink
+                    text="Create account"
+                    on_click=Callback::new(move |_| navigate_to_registration("/registration", Default::default()))
+                />
+            </div>
+        </div>
+    }
+}
+
+#[component]
+pub fn RegisterPage() -> impl IntoView {
+    let auth = use_context::<AuthFlowClient>();
+    let navigate = leptos_router::hooks::use_navigate();
+
+    if auth.is_none() {
+        logging::error!("RegisterPage: AuthFlowClient is MISSING from context!");
+    }
+
+    let auth = auth.expect("AuthFlowClient should be provided in context");
+    let navigate_to_login = navigate.clone();
+
+    let (email, set_email) = signal(String::new());
+    let (username, set_username) = signal(String::new());
+    let (password, set_password) = signal(String::new());
+    let (password_confirm, set_password_confirm) = signal(String::new());
+    let (is_loading, set_is_loading) = signal(false);
+    let (has_error, set_has_error) = signal(false);
+    let (error_message, set_error_message) = signal(String::new());
+
+    let on_register = move |_| {
+        let auth = auth.clone();
+        let navigate = navigate.clone();
+
+        set_is_loading.set(true);
+        set_has_error.set(false);
+        set_error_message.set(String::new());
+
+        let email_val = email.get_untracked();
+        let username_val = username.get_untracked();
+        let password_val = password.get_untracked();
+        let password_confirm_val = password_confirm.get_untracked();
+
+        if password_val != password_confirm_val {
+            set_is_loading.set(false);
+            set_has_error.set(true);
+            set_error_message.set("Passwords do not match".to_string());
+            return;
+        }
+
+        spawn_local(async move {
+            let req = UserRegistrationReq {
+                email: email_val,
+                username: username_val,
+                password: password_val,
+            };
+
+            match auth.register("/auth/registration", &req).await {
+                Ok(_) => navigate("/login", Default::default()),
+                Err(err) => {
+                    logging::error!("Registration error: {}", err);
+                    set_has_error.set(true);
+                    set_error_message.set("Failed to create account".to_string());
+                }
+            }
+
+            set_is_loading.set(false);
+        });
+    };
+
+    view! {
+        <div class="auth-wrapper">
+            <div class="auth-card">
+                <h2 class="auth-title">"Welcome!"</h2>
+
+                <div class="input-section">
+                    <MainInput
+                        label="email"
+                        placeholder="name@example.com"
+                        input_type="email"
+                        value=email
+                        set_value=set_email
+                        has_error=has_error.into()
+                    />
+                    <MainInput
+                        label="login"
+                        placeholder="username"
+                        input_type="text"
+                        value=username
+                        set_value=set_username
+                        has_error=has_error.into()
+                    />
+                    <MainInput
+                        label="password"
+                        placeholder="*********"
+                        input_type="password"
+                        value=password
+                        set_value=set_password
+                        has_error=has_error.into()
+                    />
+                    <MainInput
+                        label="confirm password"
+                        placeholder="*********"
+                        input_type="password"
+                        value=password_confirm
+                        set_value=set_password_confirm
+                        has_error=has_error.into()
+                    />
+                </div>
+
+                {move || has_error.get().then(|| view! { <div class="error-message">{error_message.get()}</div> })}
+
+                <AuthButton
+                    text="Create account"
+                    loading_text="Wait..."
+                    is_loading=is_loading.into()
+                    on_click=Callback::new(on_register)
+                />
+
+                <AuthTextLink
+                    text="Back to sign in"
+                    on_click=Callback::new(move |_| navigate_to_login("/login", Default::default()))
                 />
             </div>
         </div>

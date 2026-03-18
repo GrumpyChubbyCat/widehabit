@@ -9,7 +9,7 @@ pub struct UserAuthReq {
     pub password: String,
 }
 
-#[derive(ToSchema, Deserialize, Validate)]
+#[derive(ToSchema, Serialize, Deserialize, Validate)]
 pub struct UserRegistrationReq {
     #[validate(email(message = "invalid_email_format"))]
     pub email: String,
