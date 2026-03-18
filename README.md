@@ -1,84 +1,185 @@
 # Widehabit
 
-Widehabit is a service designed for personal habit tracking, built with high-performance Rust.
+Widehabit is a personal habit-tracking service. It is designed to manage habits, schedules, and habit logs through a backend API and a browser-based interface.
 
-## Project Stack
+## Overview
 
-* **Programming Language:** Rust >= 1.92
-* **Database:** PostgreSQL 18.1
-* **Containerization & Orchestration:** Docker, Docker Compose
+This repository is organized as a Rust workspace with three main parts:
 
-## Core Libraries
+- `server/`: backend API on `axum` and `tokio`
+- `frontend/`: `leptos` CSR web client built with `trunk`
+- `shared/`: common DTOs and models shared between backend and frontend
 
-1. **Runtime:** `tokio`
-2. **HTTP Framework:** `axum`
-3. **Serialization/Deserialization:** `serde`
-4. **Database Layer:** `async-diesel` with `bb8` connection pooling, `diesel_migrations`
-5. **API Routing & OpenAPI:** `utoipa`
+Supporting project assets live at the repository root:
 
-## Deployment
+- `migrations/`: Diesel migrations
+- `docker/` and `docker-compose.yaml`: local infrastructure and deployment assets
 
-The application can be deployed using Docker Compose:
+## Stack
 
-```bash
-docker compose up -d
-```
+- Rust `1.92+`
+- PostgreSQL `18.1`
+- `axum` for HTTP
+- `diesel` + `diesel-async` + `bb8` for persistence
+- `utoipa` + Swagger UI for OpenAPI
+- `leptos` for the frontend
+- Docker Compose for local infrastructure
 
-## Environment Variables (.env)
+## Runtime Layout
 
-```
-# Database Settings
+- Backend binary: `widehabit-server`
+- API prefix: `/api/v1`
+- Prometheus metrics: `/metrics`
+- Swagger UI: `/swagger-ui` in debug builds only
+- Frontend development proxy: `/api/v1` -> `http://127.0.0.1:9091/api/v1`
+
+## Environment Configuration
+
+The project uses a local `.env` file.
+
+Variables currently referenced by the repository include:
+
+- `POSTGRES_HOST`
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `DATABASE_URL`
+- `WIDE_DATABASE_URL`
+- `WIDE_LISTEN_ADDRESS`
+- `WIDE_ACCESS_LT`
+- `PROMETHEUS_PORT`
+- `LOKI_PORT`
+- `GRAFANA_PORT`
+- `GRAFANA_ADMIN_PASSWORD`
+
+The backend also supports additional `WIDE_*` settings with internal defaults:
+
+- `WIDE_LISTEN_PORT` default: `9091`
+- `WIDE_LOG_LEVEL` default: `DEBUG`
+- `WIDE_JSON_LOG` default: `false`
+- `WIDE_DATABASE_POOL` default: `30`
+- `WIDE_JWT_SECRET`
+- `WIDE_ACCESS_LT` default: `15`
+- `WIDE_REFRESH_LT` default: `6`
+
+Example local configuration:
+
+```env
 POSTGRES_HOST=localhost
-POSTGRES_DB=widehobby
-POSTGRES_USER=lamantin
-POSTGRES_PASSWORD=chokny1975
+POSTGRES_DB=widehabit
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
 
-# Diesel CLI & App Connection String
-WIDE_DATABASE_URL=postgres://lamantin:chokny1975@localhost:5432/widehobby
-WIDE_DATABASE_POOL=10
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/widehabit
+WIDE_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/widehabit
 
-# Server Settings
-WIDE_LISTEN_ADDRESS=0.0.0.0
+WIDE_LISTEN_ADDRESS=127.0.0.1
 WIDE_LISTEN_PORT=9091
-WIDE_LOG_LEVEL=debug
+WIDE_LOG_LEVEL=DEBUG
+WIDE_JSON_LOG=false
+WIDE_DATABASE_POOL=30
 
-# Authentication (JWT)
-WIDE_JWT_SECRET=your_super_secret_key_change_me
-WIDE_ACCESS_LT=3600
-WIDE_REFRESH_LT=86400
+WIDE_JWT_SECRET=change-me
+WIDE_ACCESS_LT=15
+WIDE_REFRESH_LT=6
+
+PROMETHEUS_PORT=9090
+LOKI_PORT=3100
+GRAFANA_PORT=3000
+GRAFANA_ADMIN_PASSWORD=admin
 ```
 
-## Developer Guide
+## Local Development
 
 ### Prerequisites
 
-Install Rust, Cargo, and the required PostgreSQL development libraries:
+Install system dependencies:
 
 ```bash
-# Ubuntu/Debian
-sudo apt update && sudo apt install libpq-dev
+# Ubuntu / Debian
+sudo apt update
+sudo apt install -y libpq-dev pkg-config
 ```
 
-### Database Setup
-
-Install the Diesel CLI with PostgreSQL features and run migrations:
+Install Rust toolchain requirements:
 
 ```bash
+rustup toolchain install stable
+rustup target add wasm32-unknown-unknown
 cargo install diesel_cli --no-default-features --features postgres
+cargo install trunk
+```
+
+### Start local infrastructure
+
+```bash
+docker compose up -d postgres
+```
+
+To run the full backend-oriented stack:
+
+```bash
+docker compose up -d --build
+```
+
+To enable monitoring too:
+
+```bash
+docker compose --profile monitoring up -d --build
+```
+
+### Apply migrations
+
+```bash
 diesel migration run
 ```
 
-### Running the Service
+`diesel_cli` uses `DATABASE_URL`, while the backend itself reads `WIDE_DATABASE_URL`.
 
-To start the service in development mode:
+### Run the backend
+
+From the workspace root:
 
 ```bash
-cargo run
+cargo run -p widehabit-server
 ```
 
-## API Documentation
+### Run the frontend
 
-When running in debug mode, the Swagger UI is available at:
-[http://localhost:9091/swagger-ui/](https://www.google.com/search?q=http://localhost:9091/swagger-ui/)
+From `frontend/`:
 
-**Note:** The API documentation is disabled in `--release` mode and within Docker containers.
+```bash
+trunk serve --open
+```
+
+The frontend uses the proxy configuration from `frontend/Trunk.toml` to forward `/api/v1` requests to the backend.
+
+## Useful Commands
+
+Check the whole workspace:
+
+```bash
+cargo check --workspace
+```
+
+Run the password hashing helper:
+
+```bash
+cargo run -p widehabit-server --bin arghash
+```
+
+## API and Debug Endpoints
+
+With the backend running in debug mode:
+
+- Swagger UI: `http://127.0.0.1:9091/swagger-ui`
+- OpenAPI JSON: `http://127.0.0.1:9091/api-docs/openapi.json`
+- Metrics: `http://127.0.0.1:9091/metrics`
+
+Swagger UI is compiled only for debug builds.
+
+## Development Notes
+
+- Put shared request and response types into `shared/` first when both frontend and backend use them
+- Keep backend layering intact: router -> service -> db/repo
+- Update `server/src/api/docs.rs` when changing API surface
