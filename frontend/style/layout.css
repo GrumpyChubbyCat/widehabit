@@ -8,20 +8,27 @@
 
 /* Main layout container with padding to show the background */
 .habits-container {
-  display: flex;
+  display: grid;
+  grid-template-columns: 70px minmax(280px, 340px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
   height: 100vh;
-  padding: 20px 10px 20px 20px;
+  min-height: 0;
+  padding: 28px 20px 4px;
   gap: 20px;
-  background-color: var(--bg-color); /* */
+  background-color: var(--bg-color);
   box-sizing: border-box;
 }
 
 /* Navigation Rail (Left sidebar styled as a card) */
 .nav-rail {
   width: 70px;
-  background: var(--card-bg); /* */
-  border-radius: 30px; /* */
-  box-shadow: var(--panel-shadow); /* */
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  background: var(--card-bg);
+  border-radius: 30px;
+  box-shadow: var(--panel-shadow);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -31,11 +38,17 @@
 
 /* Habits List Area (No card styling, just transparent background) */
 .habits-sidebar {
-  width: 340px;
+  width: 100%;
+  height: 100%;
+  max-width: 340px;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
   padding: 30px 10px;
   display: flex;
   flex-direction: column;
-  background: transparent; /* No background as per the SVG mockup */
+  background: transparent;
+  overflow: hidden;
 }
 
 .icon-wrapper {
@@ -77,4 +90,69 @@
   line-height: 1.4;
   font-weight: normal;
   font-family: var(--main-font);
+}
+
+@media (max-width: 1280px) {
+  .habits-container {
+    grid-template-columns: 70px minmax(240px, 280px) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 16px;
+    padding: 24px 16px 12px;
+  }
+
+  .habits-sidebar {
+    max-width: 280px;
+    padding: 24px 8px;
+  }
+}
+
+@media (max-width: 980px) {
+  .habits-container {
+    grid-template-columns: 70px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 16px;
+    padding: 20px 16px 12px;
+  }
+
+  .nav-rail {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    height: auto;
+  }
+
+  .habits-sidebar {
+    grid-column: 2;
+    grid-row: 1;
+    max-width: none;
+    max-height: 240px;
+    padding: 8px 0 0;
+    overflow: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .habits-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    height: auto;
+    min-height: 100vh;
+    padding: 16px 12px 12px;
+  }
+
+  .nav-rail {
+    grid-column: 1;
+    grid-row: 1;
+    width: auto;
+    height: auto;
+    min-height: 70px;
+    flex-direction: row;
+    padding: 0 20px;
+  }
+
+  .habits-sidebar {
+    grid-column: 1;
+    grid-row: 2;
+    max-height: none;
+    padding: 0;
+  }
 }

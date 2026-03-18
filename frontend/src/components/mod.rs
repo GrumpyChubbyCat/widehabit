@@ -330,10 +330,11 @@ pub fn CalendarGrid(
     set_log_modal_info: WriteSignal<Option<(Option<Uuid>, usize, String, String)>>,
 ) -> impl IntoView {
     let times_for_grid = times.clone();
+    let row_count_style = format!("--calendar-row-count: {}", times_for_grid.len());
 
     view! {
         <main class="calendar-view">
-            <div class="calendar-grid">
+            <div class="calendar-grid" style=row_count_style>
                 // Day headers
                 <div></div> // Spacer for the time column
                 {days.into_iter().map(|day| view! {
