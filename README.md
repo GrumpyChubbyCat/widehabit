@@ -154,6 +154,44 @@ trunk serve --open
 
 The frontend uses the proxy configuration from `frontend/Trunk.toml` to forward `/api/v1` requests to the backend.
 
+## Production Deployment
+
+The repository now includes a production-oriented Compose stack in `docker-compose.prod.yaml`.
+
+It runs:
+
+- PostgreSQL
+- Diesel migrations as a one-shot container
+- `widehabit-server`
+- `nginx` serving the built frontend and proxying `/api/v1` to the backend
+
+### Prepare environment
+
+Create a production env file from the example:
+
+```bash
+cp .env.production.example .env.production
+```
+
+Update at least:
+
+- `POSTGRES_PASSWORD`
+- `WIDE_DATABASE_URL`
+- `WIDE_JWT_SECRET`
+
+### Start the stack
+
+```bash
+docker compose -f docker-compose.prod.yaml up -d --build
+```
+
+The frontend will be available on port `1966`.
+
+### Deployment layout note
+
+If you want to keep only Compose manifests under `/opt/docker`, prefer using prebuilt images from a registry.
+If you build images directly from this repository, keep the deployment files next to the source tree or clone the repository on the target host so the Compose build contexts remain valid.
+
 ## Useful Commands
 
 Check the whole workspace:

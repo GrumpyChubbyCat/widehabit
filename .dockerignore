@@ -1,2 +1,8 @@
-/target
+.git
+.gitignore
+target
+**/target
 .env
+.env.*
+!.env.production.example
+frontend/dist

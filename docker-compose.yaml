@@ -1,3 +1,5 @@
+name: widehabit-dev
+
 version: "3.8"
 
 services:
@@ -8,7 +10,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata_dev:/var/lib/postgresql/data
     deploy:
       resources:
         limits:
@@ -116,12 +118,15 @@ services:
     restart: unless-stopped
 
 volumes:
-  pgdata:
+  pgdata_dev:
     driver: local
+    name: widehabit-dev-pgdata
   grafana-data:
     driver: local
+    name: widehabit-dev-grafana-data
 
 networks:
   wide:
     driver: bridge
+    name: widehabit-dev
 
