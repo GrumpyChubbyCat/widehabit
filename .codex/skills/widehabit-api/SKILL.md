@@ -1,6 +1,6 @@
 ---
 name: widehabit-api
-description: Use when working with the frontend-backed Widehabit API directly instead of the UI: registration, login, listing or mutating habits, reading or writing schedules, logging habit time, checking habit stats, or scripting authenticated calls against the tracker server.
+description: "Use when working with the frontend-backed Widehabit API directly instead of the UI: registration, login, listing or mutating habits, reading or writing schedules, logging habit time, checking habit stats, or scripting authenticated calls against the tracker server."
 ---
 
 # Widehabit API

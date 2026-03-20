@@ -31,6 +31,20 @@ extract_access_token() {
     sed -n 's/.*"access_token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p'
 }
 
+normalize_base_url() {
+    local url="$1"
+
+    if [[ "$url" != http://* && "$url" != https://* ]]; then
+        url="http://$url"
+    fi
+
+    while [[ "$url" == */ ]]; do
+        url="${url%/}"
+    done
+
+    printf '%s' "$url"
+}
+
 refresh_access_token() {
     local refresh_body
     refresh_body="$(mktemp)"
@@ -111,6 +125,8 @@ fi
 if [[ "$path_part" != /* ]]; then
     path_part="/$path_part"
 fi
+
+BASE_URL="$(normalize_base_url "$BASE_URL")"
 
 mkdir -p "$STATE_DIR"
 touch "$COOKIE_JAR"

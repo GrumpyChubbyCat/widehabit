@@ -1,0 +1,4 @@
+interface:
+  display_name: "Widehabit API"
+  short_description: "Work with the Widehabit tracker API"
+  default_prompt: "Use $widehabit-api to work with the frontend-backed Widehabit tracker API."

@@ -29,6 +29,20 @@ json_escape() {
     printf '%s' "$value"
 }
 
+normalize_base_url() {
+    local url="$1"
+
+    if [[ "$url" != http://* && "$url" != https://* ]]; then
+        url="http://$url"
+    fi
+
+    while [[ "$url" == */ ]]; do
+        url="${url%/}"
+    done
+
+    printf '%s' "$url"
+}
+
 extract_access_token() {
     if command -v jq >/dev/null 2>&1; then
         jq -r '.access_token // empty'
@@ -68,6 +82,8 @@ if [ -z "$username" ] || [ -z "$password" ]; then
     usage >&2
     exit 1
 fi
+
+BASE_URL="$(normalize_base_url "$BASE_URL")"
 
 mkdir -p "$STATE_DIR"
 touch "$COOKIE_JAR"
