@@ -200,6 +200,24 @@ Check the whole workspace:
 cargo check --workspace
 ```
 
+## Agent Workflow
+
+If you prefer working through Codex or other agent-style flows, the repository now includes a local skill for the frontend-backed tracker API:
+
+- Skill path: `.codex/skills/widehabit-api`
+- Scope: registration, login, habit list and mutations, schedules, habit logging, and habit stats
+- Default host discovery: `WIDEHABIT_API_BASE_URL`, with local fallback to `http://127.0.0.1:9091/api/v1`
+
+Example commands:
+
+```bash
+.codex/skills/widehabit-api/scripts/login.sh --username <username> --password <password>
+.codex/skills/widehabit-api/scripts/api.sh GET '/habit?page=1&limit=7'
+.codex/skills/widehabit-api/scripts/api.sh POST /habit '{"name":"Read","description":"20 min"}'
+```
+
+The skill keeps a local access token and cookie jar in `/tmp/widehabit-api-skill` unless `WIDEHABIT_API_STATE_DIR` is set.
+
 Run the password hashing helper:
 
 ```bash
